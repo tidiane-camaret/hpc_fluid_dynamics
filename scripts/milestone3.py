@@ -8,23 +8,34 @@ rho = rho0 + epsilon * sin(2*pi*x/L)
 u = 0
 """
 
-
 from matplotlib import animation
 from hpc_fluid_dynamics.utils import *
 
-
-omega = 0.5
+# quantities
+omega = 0.1
 rho0 = 0.5
 epsilon = 0.05
 
-incr_array = np.tile(np.arange(L), (L, 1)) #
-### density (rho)
-#rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
-#density = rho0 + epsilon * np.sin(2*np.pi*incr_array/L)
-density = np.ones((L, W)) * rho0
-### local average velocity (u)
-local_avg_velocity = np.zeros((L, W, 2))
-local_avg_velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/L)
+n_steps = 1000
+display_anim = True
+
+# EX 1 and 2:
+distribution = 2 # exercise 1 or 2
+
+incr_array = np.tile(np.arange(L), (L, 1)) # array of increasing integers from 0 to L-1
+
+
+if distribution == 1:
+    #rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
+    density = rho0 + epsilon * np.sin(2*np.pi*incr_array.T/L)
+    ### local average velocity (u)
+    local_avg_velocity = np.zeros((L, W, 2))
+
+elif distribution == 2:
+    density = np.ones((L, W)) * rho0
+    ### local average velocity (u)
+    local_avg_velocity = np.zeros((L, W, 2))
+    local_avg_velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/L)
 
 pdf = calc_equilibrium_pdf(density, local_avg_velocity)
 
@@ -82,8 +93,6 @@ def animate(i):
 
     # calculate the viscosity assuming the Stokes flow condition
 
-
-
     assert np.allclose(np.sum(pdf_streamed), np.sum(pdf_collision), atol=1e-3 )# check mass conservation
 
     pdf = pdf_collision
@@ -94,16 +103,12 @@ def animate(i):
 
     return im,
 
-n_steps = 1000
-do_anim = True
 
-if do_anim: 
+if display_anim: 
     #plot the animation
     anim = animation.FuncAnimation(fig, animate, frames=n_steps)#, interval=200, blit=True)
-    #HTML(anim.to_html5_video())
-    anim.save("result/ml3.gif", writer = 'pillow', fps = 30)
+    anim.save("results/ml3_density_anim_"+str(distribution)+".gif", writer = 'pillow', fps = 30)
 
- 
 else: # only run the simulation
     for i in range(n_steps):
         animate(i)
@@ -111,8 +116,9 @@ else: # only run the simulation
 plt.clf() #clear the figure
 
 print("amplitudes = ", np.array(amplitudes).shape)
-plt.plot(amplitudes, label="measured amplitude")
 
+
+# EX 3 :
 viscosity = 1/3*(1/omega - 0.5)
 # analytic formula for the amplitude
 # a(t) = a(0) * exp(-viscosity * t*(2*pi/L)**2 with a(0) = epsilon
@@ -120,8 +126,11 @@ def analytic_amplitude(t):
     return epsilon * np.exp(-viscosity * t*(2*np.pi/L)**2)
 
 plt.plot(analytic_amplitude(np.arange(n_steps)), label="analytic amplitude")
+plt.plot(amplitudes, label="measured amplitude")
 plt.title("Amplitude of the sheer wave over time")
 plt.xlabel("time")
 plt.ylabel("amplitude")
 plt.legend()
 plt.show()
+
+#plt.savefig("results/ml3_amplitude_"+str(distribution)+".png")
