@@ -28,13 +28,14 @@ def animate(i):
 
     assert np.allclose(np.sum(pdf), np.sum(pdf_streamed), atol=1e-3) # check mass conservation
     
-    # recalculate the density
+    # recalculate the density (rho)
     density = calc_density(pdf_streamed)
 
     #print("density = ", density)
     #print("density shape = ", density.shape)
     #print("density average = ", np.average(density))
-    # calculate local average velocity
+
+    # calculate local average velocity (u)
     local_avg_velocity = calc_local_avg_velocity(pdf_streamed)
     """
     print("local_avg_velocity = ", local_avg_velocity)
