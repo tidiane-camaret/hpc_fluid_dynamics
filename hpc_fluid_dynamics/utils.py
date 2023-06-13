@@ -118,8 +118,7 @@ def streaming(pdf):
     pdf_t1 = np.zeros_like(pdf)
     # use np.roll to shift the pdf
     for i in range(len(velocity_set)):
-        pdf_t1[i] = np.roll(pdf[i], velocity_set[i, 0], axis=0)
-        pdf_t1[i] = np.roll(pdf_t1[i], velocity_set[i, 1], axis=1)
+        pdf_t1[i] = np.roll(pdf[i], velocity_set[i], axis=(0,1))
     return pdf_t1
 
 
