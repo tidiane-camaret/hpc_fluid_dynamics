@@ -15,63 +15,74 @@ from hpc_fluid_dynamics.utils import *
 
 omega = 0.1
 density_x_y = np.ones((L, W)) 
-velocity_x_y = np.zeros((L, W, 2))
+velocity_x_y_2 = np.zeros((L, W, 2))
 
 n_steps = 100
 display_anim = True
 
 wall_velocity = np.array([0.1, 0])
 
-pdf_d_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y)
+pdf_9_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
 
 fig = plt.figure()
-ax = plt.axes(xlim=(0, W), ylim=(0, L))
-im = ax.imshow(calc_density(pdf_d_x_y), cmap='jet')
+ax = plt.axes()#xlim=(0, L), ylim=(0, W))
+im = ax.imshow(calc_density(pdf_9_x_y), cmap='jet')
 fig.colorbar(im)
 
 def animate(i):
     if i % 100 == 0:
         print("i = ", i)
-    global pdf_d_x_y
+    global pdf_9_x_y
     
     # streaming step
-    pdf_streamed_d_x_y = streaming(pdf_d_x_y)
+    pdf_streamed_9_x_y = streaming(pdf_9_x_y)
+    #print(pdf_streamed_9_x_y.shape)
 
-    assert np.allclose(np.sum(pdf_d_x_y), np.sum(pdf_streamed_d_x_y), atol=1e-3) # check mass conservation
+    assert np.allclose(np.sum(pdf_9_x_y), np.sum(pdf_streamed_9_x_y), atol=1e-3) # check mass conservation
     
     # boundary conditions : 
     # periodic in x direction
-    pdf_streamed_d_x_y[:, 0, :] = pdf_streamed_d_x_y[:, W-1, :]
+    for i in [1, 5, 8]:
+        pdf_streamed_9_x_y[i, 0, :] = pdf_streamed_9_x_y[i, L-1, :]
+
+    opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
+
     # bounce back conditions on the lower wall
-    pdf_streamed_d_x_y[2, :, 0] = pdf_streamed_d_x_y[4, :, 0]
-    pdf_streamed_d_x_y[5, :, 0] = pdf_streamed_d_x_y[6, :, 0]
-    pdf_streamed_d_x_y[7, :, 0] = pdf_streamed_d_x_y[8, :, 0]
+    for oi in opposite_indexes:
+        pdf_streamed_9_x_y[oi[0], :, 0] = pdf_streamed_9_x_y[oi[1], :, 0]
+
     # bounce back conditions on the upper wall (velocity (u,0))
-    pdf_streamed_d_x_y[4, :, L-1] = pdf_streamed_d_x_y[2, :, L-1] - 2 * density_x_y[:, L-1] * np.dot(velocity_set[4], wall_velocity)/np.dot(velocity_set[4], velocity_set[4])
-    pdf_streamed_d_x_y[6, :, L-1] = pdf_streamed_d_x_y[5, :, L-1] - 2 * density_x_y[:, L-1] * np.dot(velocity_set[6], wall_velocity)/np.dot(velocity_set[6], velocity_set[6])
-    pdf_streamed_d_x_y[8, :, L-1] = pdf_streamed_d_x_y[7, :, L-1] - 2 * density_x_y[:, L-1] * np.dot(velocity_set[8], wall_velocity)/np.dot(velocity_set[8], velocity_set[8])
+    for oi in opposite_indexes:
+        pdf_streamed_9_x_y[oi[0], :, W-1] = pdf_streamed_9_x_y[oi[1], :, W-1] - 2 * density_x_y[:, W-1] * np.dot(velocity_set[oi[1]], wall_velocity)/np.dot(velocity_set[oi[1]], velocity_set[oi[1]])
+
+
     # recalculate the density (rho)
-    density = calc_density(pdf_streamed_d_x_y)
+    density = calc_density(pdf_streamed_9_x_y)
 
     # calculate local average velocity (u)
-    velocity_x_y = calc_local_avg_velocity(pdf_streamed_d_x_y)
+    velocity_9_x_y = calc_local_avg_velocity(pdf_streamed_9_x_y)
 
     # calculate equilibrium pdf
-    equilibrium_pdf = calc_equilibrium_pdf(density, velocity_x_y)
+    equilibrium_pdf = calc_equilibrium_pdf(density, velocity_9_x_y)
 
     
     # collision step
-    pdf_collision = pdf_streamed_d_x_y + omega*(equilibrium_pdf - pdf_streamed_d_x_y)
+    pdf_collision_9_x_y = pdf_streamed_9_x_y + omega*(equilibrium_pdf - pdf_streamed_9_x_y)
 
     # calculate the viscosity assuming the Stokes flow condition
 
-    assert np.allclose(np.sum(pdf_streamed_d_x_y), np.sum(pdf_collision), atol=1e-3 )# check mass conservation
+    assert np.allclose(np.sum(pdf_streamed_9_x_y), np.sum(pdf_collision_9_x_y), atol=1e-3 )# check mass conservation
 
-    pdf_d_x_y = pdf_collision
+    pdf_9_x_y = pdf_collision_9_x_y
     # update the image
-    im.set_array(calc_density(pdf_d_x_y))
-
-    ax.set_title('t = %d' % i)
+    #print(velocity_9_x_y.shape)
+    
+    im.set_array(velocity_9_x_y[:, :, 0])
+    # set colorscale from -1 to 1
+    im.set_clim(-0.1, 0.1)
+    
+    #im.set_array(velocity_9_x_y[0:1, L-1,:])
+    ax.set_title('x velocity at t = %d' % i)
 
     return im,
 

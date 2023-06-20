@@ -2,9 +2,9 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-W, L = 200, 200 # width and length of the grid
-velocity_set = np.array([[0, 0], [0, 1], [1, 0], [0, -1], [-1, 0],
-                            [1, 1], [-1, -1], [1, -1], [-1, 1]])
+L, W = 50, 30 # width and length of the grid
+velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
+                            [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
 def init_pdf(mode = "random_uniform"): 
     """

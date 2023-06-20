@@ -16,11 +16,11 @@ omega = 0.1
 rho0 = 0.5
 epsilon = 0.05
 
-n_steps = 100
+n_steps = 1000
 display_anim = True
 
 # EX 1 and 2:
-distribution = 1 # exercise 1 or 2
+distribution = 2 # exercise 1 or 2
 
 incr_array = np.tile(np.arange(L), (L, 1)) # array of increasing integers from 0 to L-1
 
