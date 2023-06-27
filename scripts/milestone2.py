@@ -65,4 +65,4 @@ def animate(i):
 
 anim = animation.FuncAnimation(fig, animate, frames=300, interval=200, blit=True)
 #HTML(anim.to_html5_video())
-plt.show()
+anim.save("results/ml2_anim.gif", writer = 'pillow', fps = 30)

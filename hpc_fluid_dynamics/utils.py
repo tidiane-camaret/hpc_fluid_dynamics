@@ -6,6 +6,11 @@ L, W = 50, 30 # width and length of the grid
 velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                             [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
+velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36,
+                                    1/36, 1/36])
+
+sound_speed = 1 / np.sqrt(3)
+
 def init_pdf(mode = "random_uniform"): 
     """
     Initialize the probability distribution function (pdf) of the fluid
