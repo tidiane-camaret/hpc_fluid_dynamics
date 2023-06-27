@@ -41,7 +41,6 @@ def animate(i):
     # EQULIBRIUM 
     equilibrium_pdf = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
 
-    
     # COLLISION STEP
     pdf_9_x_y = pdf_9_x_y + omega*(equilibrium_pdf - pdf_9_x_y)
 
@@ -50,12 +49,10 @@ def animate(i):
     assert np.allclose(np.sum(pdf_9_x_y), np.sum(pdf_9_x_y), atol=1e-3) # check mass conservation
     
     # BOUNDARY CONDITIONS
-
+    opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
     # periodic in x direction
     for i in [1, 5, 8]:
         pdf_9_x_y[i, 0, :] = pdf_9_x_y[i, L-1, :]
-
-    opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
 
     # bounce back conditions on the lower wall
     for oi in opposite_indexes:
@@ -66,11 +63,10 @@ def animate(i):
         pdf_9_x_y[oi[0], :, W-1] = pdf_9_x_y[oi[1], :, W-1] - \
                                         2 * velocity_set_weights[oi[1]] * density_x_y[:, W-1] * np.dot(velocity_set[oi[1]], wall_velocity) / sound_speed**2
 
+    # DRAW x VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])
-    # set colorscale from -1 to 1
-    im.set_clim(-0.1, 0.1)
     
-    #im.set_array(velocity_x_y_2[0:1, L-1,:])
+    im.set_clim(-0.1, 0.1) # set colorscale 
     ax.set_title('x velocity at t = %d' % i)
 
     return im,
