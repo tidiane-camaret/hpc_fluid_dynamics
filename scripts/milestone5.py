@@ -1,8 +1,8 @@
 """
-Couette flow
+Poiseuille flow 
 ============================
-This script simulates Couette flow, i.e. flow between two parallel plates, 
-where the upper plate is moving with a constant velocity.
+This script simulates Poiseuille flow, i.e. flow between two parallel plates,
+with a density gradient in the x direction.
 
 Initial conditions:
 rho(x,y,t=0) = 1
@@ -13,10 +13,7 @@ u(x,y,t=0) = 0
 from matplotlib import animation
 from hpc_fluid_dynamics.utils import *
 
-omega = 0.1
 n_steps = 100
-wall_velocity = np.array([1, 0])
-
 display_anim = True
 
 fig = plt.figure()
@@ -50,19 +47,15 @@ def animate(i):
     
     # BOUNDARY CONDITIONS
     opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
-    # periodic in x direction
-    for i in [1, 5, 8]:
-        pdf_9_x_y[i, 0, :] = pdf_9_x_y[i, L-1, :]
 
     # bounce back conditions on the lower wall
     for oi in opposite_indexes:
         pdf_9_x_y[oi[0], :, 0] = pdf_9_x_y[oi[1], :, 0]
 
-    # bounce back conditions on the upper wall (velocity (u,0))
+    # bounce back conditions on the upper wall
     for oi in opposite_indexes:
-        pdf_9_x_y[oi[0], :, W-1] = pdf_9_x_y[oi[1], :, W-1] - \
-                                        2 * velocity_set_weights[oi[1]] * density_x_y[:, W-1] * np.dot(velocity_set[oi[1]], wall_velocity) / sound_speed**2
-
+        pdf_9_x_y[oi[0], :, W-1] = pdf_9_x_y[oi[1], :, W-1] 
+        
     # PLOT X VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])
     
