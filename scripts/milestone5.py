@@ -13,7 +13,15 @@ u(x,y,t=0) = 0
 from matplotlib import animation
 from hpc_fluid_dynamics.utils import *
 
-n_steps = 100
+omega = 0.1
+p_in = 1.5
+p_out = 0.5
+d_p = p_out - p_in
+
+density_in = p_in / sound_speed**2
+density_out = p_out / sound_speed**2
+
+n_steps = 1000
 display_anim = True
 
 fig = plt.figure()
@@ -40,6 +48,29 @@ def animate(i):
 
     # COLLISION STEP
     pdf_9_x_y = pdf_9_x_y + omega*(equilibrium_pdf - pdf_9_x_y)
+
+    # PRESSURE BOUNDARY CONDITIONS
+    """
+    print((np.ones((1, W))*density_in).shape)
+    print(velocity_x_y_2[L-2,:,:][None, :].shape)
+    print(calc_equilibrium_pdf(np.ones((1, W))*density_in, velocity_x_y_2[L-2,:,:][None, :]).shape)
+    print(pdf_9_x_y[:, L-2, :][:, None, :].shape)
+    print(equilibrium_pdf[:, L-2, :][:, None, :].shape)
+    """
+    # at x=0
+    pdf_9_x_y[:,0,:] = calc_equilibrium_pdf(np.ones((1, W))*density_in, velocity_x_y_2[L-2,:,:][None, :]).squeeze() + \
+                       pdf_9_x_y[:, L-2, :] - \
+                       equilibrium_pdf[:, L-2, :]
+    """
+    pdf_9_x_y[:,0,:] = calc_equilibrium_pdf(np.ones((1, W))*density_in, velocity_x_y_2[L-2,:,:][None, :]) + \
+                       pdf_9_x_y[:, L-2, :][:, None, :] - \
+                       equilibrium_pdf[:, L-2, :][:, None, :]
+    """
+    # at x=L-1
+    pdf_9_x_y[:,L-1,:] = calc_equilibrium_pdf(np.ones((1, W))*density_out, velocity_x_y_2[1,:,:][None, :]).squeeze() + \
+                            pdf_9_x_y[:, 1, :] - \
+                            equilibrium_pdf[:, 1, :]
+
 
     # STREAMING STEP
     pdf_9_x_y = streaming(pdf_9_x_y)
@@ -68,7 +99,7 @@ def animate(i):
 if display_anim: 
     #plot the animation
     anim = animation.FuncAnimation(fig, animate, frames=n_steps)#, interval=200, blit=True)
-    anim.save("results/ml4_density_anim.gif", writer = 'pillow', fps = 30)
+    anim.save("results/ml5_density_anim.gif", writer = 'pillow', fps = 30)
 
 else: # only run the simulation
     for i in range(n_steps):

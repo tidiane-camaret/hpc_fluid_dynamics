@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-L, W = 50, 30 # width and length of the grid
+L, W = 30, 50 # width and length of the grid
 velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                             [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
@@ -69,7 +69,7 @@ def calc_velocity(pdf):
     respectively. The third dimension is the velocity in the x and y
     directions.
     """
-    velocity = np.zeros((L, W, 2))
+    velocity = np.zeros(pdf.shape[1:] + (2,)) 
     # loop through all positions
     for i in range(L):
         for j in range(W):
@@ -89,7 +89,7 @@ def calc_local_avg_velocity(pdf):
     velocity in the x and y directions.
     """
     density = calc_density(pdf)
-    sum = np.zeros((L, W, 2))
+    sum = np.zeros(density.shape + (2,))
     for i in range(len(velocity_set)):
         sum[:, :, 0] += velocity_set[i, 0, None]*pdf[i, :, :]
         sum[:, :, 1] += velocity_set[i, 1, None]*pdf[i, :, :]
@@ -102,14 +102,16 @@ def calc_equilibrium_pdf(density, velocity):
     is a 3D array of shape (len(velocity_set), L, W), where L and W are the
     length and width of the grid, respectively.
     """
-    w = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36, 1/36, 1/36])
-    equilibrium_pdf = np.zeros((len(velocity_set), L, W))
+    equilibrium_pdf = np.zeros((len(velocity_set),) + density.shape)
     for i in range(len(velocity_set)):
-        equilibrium_pdf[i] = w[i]*density*\
-            (1 + 
-             3*(velocity_set[i, 0]*velocity[:, :, 0] + velocity_set[i, 1]*velocity[:, :, 1]) +
-             9/2*(velocity_set[i, 0]*velocity[:, :, 0] + velocity_set[i, 1]*velocity[:, :, 1])**2 - 
-             3/2*(velocity[:, :, 0]**2 + velocity[:, :, 1]**2))
+        equilibrium_pdf[i] = velocity_set_weights[i] * density * \
+            (
+                1 + 
+                3*(velocity_set[i, 0]*velocity[:, :, 0] + velocity_set[i, 1]*velocity[:, :, 1]) +
+                9/2*(velocity_set[i, 0]*velocity[:, :, 0] + velocity_set[i, 1]*velocity[:, :, 1])**2 - 
+                3/2*(velocity[:, :, 0]**2 + velocity[:, :, 1]**2)
+             )
+        
     return equilibrium_pdf
 
 
