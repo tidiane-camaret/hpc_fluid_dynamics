@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-L, W = 30, 50 # width and length of the grid
+L, W = 150, 200 # width and length of the grid
 velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                             [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
