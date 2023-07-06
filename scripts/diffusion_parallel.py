@@ -29,8 +29,8 @@ rank = comm.Get_rank()
 dx = 0.1     # = dy
 nt = 100  # timesteps to iterate
 dt = 0.0001   # timestep length
+D = 10        # diffusion constant
 
-omega = 1
 print('Rank/Size {}/{}'.format(rank,size))
 
 NX = L
@@ -77,7 +77,7 @@ allDestSourBuf = np.zeros(size*8, dtype = int)
 comm.Gather(sd, allDestSourBuf, root = 0)
 
 if rank == 0: 
-    density_plot_list = []
+    c_plot_list = []
     print(allrcoords)
     print(' ')
     cartarray = np.ones((sectsY,sectsX),dtype=int)
@@ -95,64 +95,61 @@ if rank == 0:
     print('')
     print(cartarray)
 
-def Communicate(pdf_9xy,cartcomm,sd):
-    recvbuf = np.zeros(pdf_9xy[:,:,1].shape)
+def Communicate(c,cartcomm,sd):
+    recvbuf = np.zeros(c[:,1].shape[0])
     sR,dR,sL,dL,sU,dU,sD,dD = sd
     # Send to right which is destination rigth (dR) and receive from left which is source right (sR)
     # print(rank,'Right, source',sR,'destination',dR)
-    sendbuf = pdf_9xy[:,:,-2].copy() # Send the second last column to dR
+    sendbuf = c[:,-2].copy() # Send the second last column to dR
     cartcomm.Sendrecv(sendbuf, dR, recvbuf = recvbuf, source = sR)
-    pdf_9xy[:,:,0] = recvbuf # received into the 0th column from sR
+    c[:,0] = recvbuf # received into the 0th column from sR
     # Send to left and receive from right
     #print(rank,'Left, source',sL,'destination',dL)
-    sendbuf = pdf_9xy[:,:,1].copy()
+    sendbuf = c[:,1].copy()
     cartcomm.Sendrecv(sendbuf, dL, recvbuf = recvbuf, source = sL)
-    pdf_9xy[:,:,-1] = recvbuf
+    c[:,-1] = recvbuf
     # Send to up and receive from down
     #print(rank,'Up, source',sU,'destination',dU)
-    sendbuf = pdf_9xy[:,1,:].copy()
+    sendbuf = c[1,:].copy()
     cartcomm.Sendrecv(sendbuf, dU, recvbuf = recvbuf, source = sU)
-    pdf_9xy[:,-1,:] = recvbuf
+    c[-1,:] = recvbuf
     # Send to down and receive from up
     #print(rank,'Down, source',sD,'destination',dD)
-    sendbuf = pdf_9xy[:,-2,:].copy()
+    sendbuf = c[-2,:].copy()
     cartcomm.Sendrecv(sendbuf, dD, recvbuf = recvbuf, source = sD)
-    pdf_9xy[:,0,:]=recvbuf
+    c[0,:]=recvbuf
 #
-    return pdf_9xy
+    return c
 
 ## INTIALIZE THE GRID
-
-pdf_9xy_full_range = init_pdf(NX,NY,mode = "circle")
-pdf_9xy = pdf_9xy_full_range[:,rcoords[0]*NY//sectsY:(rcoords[0]+1)*NY//sectsY,rcoords[1]*NX//sectsX:(rcoords[1]+1)*NX//sectsX]
+x = np.arange(rcoords[0]*NX//sectsX,(rcoords[0]+1)*NX//sectsX)*dx
+y = np.arange(rcoords[1]*NY//sectsX,(rcoords[1]+1)*NY//sectsY)*dx
+X,Y = np.meshgrid(x,y)
+sigma0 = 30*dx
+c = np.zeros((nxsub,nysub))
+c[1:-1,1:-1] = np.exp(-((X-NX/2*dx)**2+(Y-NY/2*dx)**2)/(2*sigma0**2)) / (np.sqrt(2*np.pi)*sigma0)
 
 for t in np.arange(nt):
     # First we need a communication step
-    pdf_9xy = Communicate(pdf_9xy,cartcomm,sd)
+    c = Communicate(c,cartcomm,sd)
     # Then we do a timestep forward
-    # MOMENT UPDATE 
-    density = calc_density(pdf_9xy)
-    local_avg_velocity = calc_local_avg_velocity(pdf_9xy)
+    cup = (np.roll(c,shift=(1,0),axis=(0,1)).copy())[1:-1,1:-1]
+    cdown = (np.roll(c,shift=(-1,0),axis=(0,1)).copy())[1:-1,1:-1]
+    cleft = (np.roll(c,shift=(0,1),axis=(0,1)).copy())[1:-1,1:-1]
+    crght = (np.roll(c,shift=(0,-1),axis=(0,1)).copy())[1:-1,1:-1]
+    ccent = c.copy()[1:-1,1:-1]
+    c[1:-1,1:-1] = c[1:-1,1:-1] + D*dt/dx**2*(cleft+cdown -4.*ccent+crght+cup)
 
-    # EQULIBRIUM 
-    equilibrium_pdf_9xy = calc_equilibrium_pdf(density, local_avg_velocity)
 
-    # COLLISION STEP
-    pdf_9xy = pdf_9xy + omega*(equilibrium_pdf_9xy - pdf_9xy)
-
-    # STREAMING STEP
-    pdf_9xy = streaming(pdf_9xy)
-    density_full_range = np.zeros((NX*NY))
-
-    #comm.Gather(density[1:-1,1:-1].reshape((nxsub-2)*(nysub-2)), density_full_range, root = 0)
-    comm.Gather(density.reshape((nxsub-2)*(nysub-2)), density_full_range, root = 0)
+    c_full_range = np.zeros((NX*NY))
+    comm.Gather(c[1:-1,1:-1].reshape((nxsub-2)*(nysub-2)), c_full_range, root = 0)
     rcoords_x = comm.gather(rcoords[1], root=0)
     rcoords_y = comm.gather(rcoords[0], root=0)
     if rank == 0:
 
         X0, Y0 = np.meshgrid(np.arange(NX),np.arange(NY))
         xy = np.array([rcoords_x,rcoords_y]).T
-        density_plot = np.zeros((NX,NY))
+        c_plot = np.zeros((NX,NY))
         #
         for i in np.arange(sectsX):
             for j in np.arange(sectsY):
@@ -164,53 +161,17 @@ for t in np.arange(nt):
                 clo = k*NX*NY//(sectsX*sectsY)
                 chi = (k+1)*NX*NY//(sectsX*sectsY)
 
-                density_plot[xlo:xhi,ylo:yhi] = density_full_range[clo:chi].reshape(NX//sectsX,NY//sectsY)
+                c_plot[xlo:xhi,ylo:yhi] = c_full_range[clo:chi].reshape(NX//sectsX,NY//sectsY)
         #print the middle of the grid
-        print(density_plot[NX//2,NY//2])
-        density_plot_list.append(density_plot)
+        print(c_plot[NX//2,NY//2])
+        c_plot_list.append(c_plot)
 
 if rank == 0:
 
-    c_plot_list = np.array(density_plot_list)
+    c_plot_list = np.array(c_plot_list)
     print(c_plot_list.shape)
     c_plot_list = c_plot_list[..., np.newaxis] * np.ones(3)
     c_plot_list = c_plot_list / np.max(c_plot_list) * 255
-    write_gif(c_plot_list, 'results/ml2_parallel.gif', fps=30)
+    write_gif(c_plot_list, 'results/diffusion.gif', fps=10)
 
 client.shutdown()
-
-"""
-omega = 1
-n_steps = 500
-
-arrays = []
-
-pdf = init_pdf(mode="circle")
-
-for i in range(n_steps):
-    if i % 100 == 0:
-        print("step ", i)
-
-    # MOMENT UPDATE 
-    density = calc_density(pdf)
-    local_avg_velocity = calc_local_avg_velocity(pdf)
-
-    # EQULIBRIUM 
-    equilibrium_pdf = calc_equilibrium_pdf(density, local_avg_velocity)
-
-    # COLLISION STEP
-    pdf = pdf + omega*(equilibrium_pdf - pdf)
-
-    # STREAMING STEP
-    pdf = streaming(pdf)
-
-    # SAVE FOR PLOTTING
-    arrays.append(calc_density(pdf))
-
-# PLOT
-# add color channel in order to work with array2gif
-arrays = np.array(arrays)[..., np.newaxis] * np.ones(3)
-# normalize
-arrays = arrays / np.max(arrays) * 255
-write_gif(arrays, 'results/ml_parallel.gif', fps=30)
-"""

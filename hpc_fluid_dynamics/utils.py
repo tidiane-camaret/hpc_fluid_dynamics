@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-L, W = 250, 250 # width and length of the grid
+L, W = 200, 200 # width and length of the grid
 velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                             [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
@@ -11,7 +11,7 @@ velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36,
 
 sound_speed = 1 / np.sqrt(3)
 
-def init_pdf(mode = "random_uniform"): 
+def init_pdf(L = L, W = W, mode = "random_uniform"): 
     """
     Initialize the probability distribution function (pdf) of the fluid
     particles. The pdf is a 3D array of shape (len(velocity_set), L, W), where
