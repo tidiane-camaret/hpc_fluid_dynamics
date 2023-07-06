@@ -18,8 +18,8 @@ p_in = 0.1
 p_out = 0.01
 d_p = p_out - p_in
 
-density_in = 1.01 #= p_out + d_p / sound_speed**2
-density_out = 1 # p_out / sound_speed**2
+density_in = p_out + d_p / sound_speed**2
+density_out = p_out / sound_speed**2
 
 n_steps = 500
 display_anim = True
@@ -102,7 +102,7 @@ def animate(i):
 
     # bounce back conditions on the upper wall
     for oi in opposite_indexes:
-        pdf_9_x_y[oi[0], :, W-1] = pdf_9_x_y[oi[1], :, W-1] 
+        pdf_9_x_y[oi[1], :, W-1] = pdf_9_x_y[oi[0], :, W-1] 
         
     # PLOT X VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])

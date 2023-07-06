@@ -61,7 +61,7 @@ def animate(i):
         pdf_9_x_y[oi[1], :, W-1] = pdf_9_x_y[oi[0], :, W-1] - \
                                         2 * velocity_set_weights[oi[0]] * density_x_y[:, W-1] * np.dot(velocity_set[oi[0 ]], wall_velocity) / sound_speed**2
 
-
+    
     opposite_indexes = [[1, 3], [5, 7], [8, 6]] # indexes of opposite directions
     # bounce back conditions on the left wall
     for oi in opposite_indexes:
@@ -70,7 +70,7 @@ def animate(i):
     # bounce back conditions on the right wall 
     for oi in opposite_indexes:
         pdf_9_x_y[oi[1], L-1, :] = pdf_9_x_y[oi[0], L-1, :]
-
+    
     # PLOT X VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])
     
