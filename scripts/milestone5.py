@@ -14,14 +14,14 @@ from matplotlib import animation
 from hpc_fluid_dynamics.utils import *
 
 omega = 1.2
-p_in = 0.01
-p_out = 0.1
+p_in = 0.1
+p_out = 0.01
 d_p = p_out - p_in
 
-density_in = p_out + d_p / sound_speed**2
-density_out = p_out / sound_speed**2
+density_in = 1.01 #= p_out + d_p / sound_speed**2
+density_out = 1 # p_out / sound_speed**2
 
-n_steps = 1000
+n_steps = 500
 display_anim = True
 
 fig = plt.figure()

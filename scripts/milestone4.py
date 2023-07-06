@@ -51,8 +51,8 @@ def animate(i):
     # BOUNDARY CONDITIONS
     opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
     # periodic in x direction
-    for i in [1, 5, 8]:
-        pdf_9_x_y[i, 0, :] = pdf_9_x_y[i, L-1, :]
+    #for i in [1, 5, 8]:
+    #    pdf_9_x_y[i, 0, :] = pdf_9_x_y[i, L-1, :]
 
     # bounce back conditions on the lower wall
     for oi in opposite_indexes:
