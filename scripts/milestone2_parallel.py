@@ -33,8 +33,8 @@ dt = 0.0001   # timestep length
 omega = 1
 print('Rank/Size {}/{}'.format(rank,size))
 
-NX = L
-NY = W
+NX = 250
+NY = 250
 
 ### Domain decomposition
 if NX < NY:
@@ -123,7 +123,7 @@ def Communicate(pdf_9xy,cartcomm,sd):
 
 ## INTIALIZE THE GRID
 
-pdf_9xy_full_range = init_pdf(NX,NY,mode = "circle")
+pdf_9xy_full_range = init_pdf(NX,NY,mode = "square")
 pdf_9xy = pdf_9xy_full_range[:,rcoords[0]*NY//sectsY:(rcoords[0]+1)*NY//sectsY,rcoords[1]*NX//sectsX:(rcoords[1]+1)*NX//sectsX]
 
 for t in np.arange(nt):

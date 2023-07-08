@@ -17,10 +17,6 @@ from hpc_fluid_dynamics.utils import *
 omega = 1
 pdf = init_pdf(mode="circle")
 
-fig = plt.figure()
-ax = plt.axes(xlim=(0, W), ylim=(0, L))
-im = ax.imshow(calc_density(pdf), cmap='jet')
-
 n_steps = 1000
 arrays = []
 

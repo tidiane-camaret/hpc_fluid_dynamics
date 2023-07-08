@@ -18,12 +18,13 @@ p_in = 0.1
 p_out = 0.01
 d_p = p_out - p_in
 
-density_in = p_out + d_p / sound_speed**2
-density_out = p_out / sound_speed**2
+density_in = (p_out + d_p) / sound_speed**2
+density_out = (p_out) / sound_speed**2
 
 n_steps = 500
 display_anim = True
 
+L, W = 250, 250
 fig = plt.figure()
 ax = plt.axes()
 im = ax.imshow(np.ones((L, W)) , cmap='jet')
