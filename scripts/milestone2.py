@@ -12,7 +12,7 @@ particles.
 """
 
 from matplotlib import animation
-from hpc_fluid_dynamics.utils import *
+from hpc_fluid_dynamics.lbm_utils import *
 
 pdf = init_pdf(mode="circle")
 

@@ -11,7 +11,7 @@ u(x,y,t=0) = 0
 """
 
 from matplotlib import animation
-from hpc_fluid_dynamics.utils import *
+from hpc_fluid_dynamics.lbm_utils import *
 
 omega = 1.2
 wall_velocity = np.array([1, 0])

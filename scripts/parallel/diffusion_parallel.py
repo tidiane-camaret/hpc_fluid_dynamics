@@ -12,7 +12,7 @@ particles.
 """
 from matplotlib import cm
 from array2gif import write_gif
-from hpc_fluid_dynamics.utils import *
+from hpc_fluid_dynamics.lbm_utils import *
 import ipyparallel as ipp
 from mpi4py import MPI
 

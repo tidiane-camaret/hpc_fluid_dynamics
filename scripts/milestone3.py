@@ -9,7 +9,7 @@ u = 0
 """
 
 from matplotlib import animation
-from hpc_fluid_dynamics.utils import *
+from hpc_fluid_dynamics.lbm_utils import *
 
 # quantities
 omega = 0.1

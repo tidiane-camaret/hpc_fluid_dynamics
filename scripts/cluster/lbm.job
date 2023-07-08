@@ -1,0 +1,31 @@
+#!/bin/bash -x
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=40
+#SBATCH --time=00:40:00
+#SBATCH -J HPC_WITH_PYTHON
+#SBATCH --mem=6gb
+#SBATCH --export=ALL
+#SBATCH --partition=multiple
+
+module load devel/python/3.8.6_gnu_10.2 # the newest version (devel/python/3.10.0_gnu_11.1) throws an error when importing numpy
+module load compiler/gnu/12.1
+module load mpi/openmpi/4.1
+module load devel/miniconda
+
+source activate hpc_env  #using soure instead of conda avoids having to conda init
+
+echo "Running on ${SLURM_JOB_NUM_NODES} nodes with ${SLURM_JOB_CPUS_PER_NODE} cores each."
+echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
+pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
+pip install --user --upgrade numpy 
+pip install -e .
+time mpirun -np 32 python scripts/parallel/milestone2_parallel.py 
+#python scripts/serial/milestone2_serial.py 
+
+## instructions
+# run : 
+# sbatch cluster/lbm.job
+
+## check job :
+# scontrol show job 22411569
+

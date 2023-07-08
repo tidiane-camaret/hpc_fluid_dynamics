@@ -10,31 +10,28 @@ equilibrium pdf is calculated using the density and the velocity of the fluid
 particles. 
 ============================
 """
-from matplotlib import cm
-from array2gif import write_gif
-from hpc_fluid_dynamics.utils import *
-import ipyparallel as ipp
-from mpi4py import MPI
 
-NCPU = 4
-cluster = ipp.Cluster(engines="mpi", n=NCPU)
-client = cluster.start_and_connect_sync()
-#
-client.ids
+import numpy as np
+import matplotlib.pyplot as plt
+from mpi4py import MPI
+from array2gif import write_gif
+
+from hpc_fluid_dynamics.lbm_utils import *
+
 
 comm = MPI.COMM_WORLD      # start the communicator assign to comm
 size = comm.Get_size()     # get the size and assign to size
 rank = comm.Get_rank()
 
 dx = 0.1     # = dy
-nt = 100  # timesteps to iterate
+nt = 1000  # timesteps to iterate
 dt = 0.0001   # timestep length
 
 omega = 1
 print('Rank/Size {}/{}'.format(rank,size))
 
-NX = 250
-NY = 250
+NX = 256
+NY = 256
 
 ### Domain decomposition
 if NX < NY:
@@ -170,47 +167,10 @@ for t in np.arange(nt):
         density_plot_list.append(density_plot)
 
 if rank == 0:
-
+    
     c_plot_list = np.array(density_plot_list)
     print(c_plot_list.shape)
     c_plot_list = c_plot_list[..., np.newaxis] * np.ones(3)
     c_plot_list = c_plot_list / np.max(c_plot_list) * 255
-    write_gif(c_plot_list, 'results/ml2_parallel.gif', fps=30)
+    write_gif(c_plot_list, 'results/ml2_parallel_cluster.gif', fps=30)
 
-client.shutdown()
-
-"""
-omega = 1
-n_steps = 500
-
-arrays = []
-
-pdf = init_pdf(mode="circle")
-
-for i in range(n_steps):
-    if i % 100 == 0:
-        print("step ", i)
-
-    # MOMENT UPDATE 
-    density = calc_density(pdf)
-    local_avg_velocity = calc_local_avg_velocity(pdf)
-
-    # EQULIBRIUM 
-    equilibrium_pdf = calc_equilibrium_pdf(density, local_avg_velocity)
-
-    # COLLISION STEP
-    pdf = pdf + omega*(equilibrium_pdf - pdf)
-
-    # STREAMING STEP
-    pdf = streaming(pdf)
-
-    # SAVE FOR PLOTTING
-    arrays.append(calc_density(pdf))
-
-# PLOT
-# add color channel in order to work with array2gif
-arrays = np.array(arrays)[..., np.newaxis] * np.ones(3)
-# normalize
-arrays = arrays / np.max(arrays) * 255
-write_gif(arrays, 'results/ml_parallel.gif', fps=30)
-"""

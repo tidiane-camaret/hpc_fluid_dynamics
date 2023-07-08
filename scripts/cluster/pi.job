@@ -21,4 +21,3 @@ time mpirun python pi.py
 # sbatch pi.job
 
 # check :
-# 
