@@ -33,8 +33,8 @@ D = 10        # diffusion constant
 
 print('Rank/Size {}/{}'.format(rank,size))
 
-NX = L
-NY = W
+NX = 250
+NY = 250
 
 ### Domain decomposition
 if NX < NY:
