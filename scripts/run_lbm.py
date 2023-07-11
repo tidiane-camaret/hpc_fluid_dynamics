@@ -22,6 +22,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode)
     lbm.run(nt=args.nt)
-    lbm.plot_density(filename="density.gif")
-    lbm.plot_velocity(filename="velocity.gif")
+    lbm.plot_density(filename="density_"+args.mode+".gif")
+    lbm.plot_velocity(filename="velocity_"+args.mode+".gif")
 

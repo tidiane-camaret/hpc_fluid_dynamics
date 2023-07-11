@@ -35,7 +35,7 @@ class LBM:
         self.velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36,
                                               1/36, 1/36, 1/36])
         self.sound_speed = 1 / np.sqrt(3)
-        self.wall_velocity = np.array([0., 0])
+        self.wall_velocity = np.array([0.1, 0])
         self.pdf_9xy = init_pdf(NX, NY, mode)
         
 
@@ -252,7 +252,7 @@ class LBM:
                 plt.xlabel("time")
                 plt.ylabel("amplitude")
                 plt.legend()
-                plt.savefig("results/ml3_amplitude_"+self.mode+".png")
+                plt.savefig("results/amplitude_"+self.mode+".png")
                 plt.clf()
 
     def boundary_conditions(self,pdf_9xy,density_xy):
@@ -267,7 +267,8 @@ class LBM:
                 pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1] - \
                                                 2 * self.velocity_set_weights[oi[0]] * density_xy[:, -1] * np.dot(self.velocity_set[oi[0]], self.wall_velocity) / self.sound_speed**2
         if self.mode == 'lid':
-            opposite_indexes = [[4, 7], [8, 6], [3, 1]] # indexes of opposite directions
+            ### TODO moves even with zero velocity. See why.
+            opposite_indexes = [[5, 7], [1, 3], [8, 6]] # indexes of opposite directions
             # bounce back conditions on the left wall
             for oi in opposite_indexes:
                 pdf_9xy[oi[0], 0, :] = pdf_9xy[oi[1], 0, :]
