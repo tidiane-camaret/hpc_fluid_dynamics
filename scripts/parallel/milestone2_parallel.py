@@ -23,7 +23,7 @@ comm = MPI.COMM_WORLD      # start the communicator assign to comm
 size = comm.Get_size()     # get the size and assign to size
 rank = comm.Get_rank()
 
-dx = 0.1     # = dy
+
 nt = 1000  # timesteps to iterate
 dt = 0.0001   # timestep length
 

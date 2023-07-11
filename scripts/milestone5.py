@@ -20,13 +20,13 @@ d_p = p_out - p_in
 density_in = (p_out + d_p) / sound_speed**2
 density_out = (p_out) / sound_speed**2
 
-n_steps = 500
+n_steps = 5000
 display_anim = True
 
-L, W = 250, 250
+NX, NY = 250, 250
 fig = plt.figure()
 ax = plt.axes()
-im = ax.imshow(np.ones((L, W)) , cmap='jet')
+im = ax.imshow(np.ones((NX, NY)) , cmap='jet')
 fig.colorbar(im)
 
 plot_dict = {}
@@ -38,8 +38,8 @@ def animate(i):
     
     # MOMENT UPDATE 
     if i == 0:
-        density_x_y = np.ones((L, W)) 
-        velocity_x_y_2 = np.zeros((L, W, 2))
+        density_x_y = np.ones((NX, NY)) 
+        velocity_x_y_2 = np.zeros((NX, NY, 2))
         pdf_9_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
     else:
         density_x_y = calc_density(pdf_9_x_y)
@@ -71,11 +71,11 @@ def animate(i):
                             equilibrium_pdf[:, 1, :]
     """
 
-    density_in_x_y = np.ones((L, W))*density_in
-    density_out_x_y = np.ones((L, W))*density_out
+    density_in_x_y = np.ones((NX, NY))*density_in
+    density_out_x_y = np.ones((NX, NY))*density_out
 
-    u1_x_y_2 = np.repeat(velocity_x_y_2[1,:,:][None, :], L, axis=0)
-    uN_x_y_2 = np.repeat(velocity_x_y_2[L-2,:,:][None, :], L, axis=0)
+    u1_x_y_2 = np.repeat(velocity_x_y_2[1,:,:][None, :], NX, axis=0)
+    uN_x_y_2 = np.repeat(velocity_x_y_2[-2,:,:][None, :], NX, axis=0)
 
     eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
     eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
@@ -102,7 +102,7 @@ def animate(i):
 
     # bounce back conditions on the upper wall
     for oi in opposite_indexes:
-        pdf_9_x_y[oi[1], :, W-1] = pdf_9_x_y[oi[0], :, W-1] 
+        pdf_9_x_y[oi[1], :, NY-1] = pdf_9_x_y[oi[0], :, NY-1] 
         
     # PLOT X VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])

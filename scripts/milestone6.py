@@ -14,15 +14,18 @@ u(x,y,t=0) = 0
 from matplotlib import animation
 from hpc_fluid_dynamics.lbm_utils import *
 
-omega = 0.1
+omega = 1.2
 n_steps = 1000
 wall_velocity = np.array([1, 0])
 
 display_anim = True
 
+NX = 250
+NY = 250
+
 fig = plt.figure()
 ax = plt.axes()
-im = ax.imshow(np.ones((L, W)) , cmap='jet')
+im = ax.imshow(np.ones((NX, NY)) , cmap='jet')
 fig.colorbar(im)
 
 def animate(i):
@@ -32,8 +35,8 @@ def animate(i):
     
     # MOMENT UPDATE 
     if i == 0:
-        density_x_y = np.ones((L, W)) 
-        velocity_x_y_2 = np.zeros((L, W, 2))
+        density_x_y = np.ones((NX, NY)) 
+        velocity_x_y_2 = np.zeros((NX, NY, 2))
         pdf_9_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
     else:
         density_x_y = calc_density(pdf_9_x_y)
@@ -58,8 +61,8 @@ def animate(i):
 
     # bounce back conditions on the upper wall (velocity (u,0))
     for oi in opposite_indexes:
-        pdf_9_x_y[oi[1], :, W-1] = pdf_9_x_y[oi[0], :, W-1] - \
-                                        2 * velocity_set_weights[oi[0]] * density_x_y[:, W-1] * np.dot(velocity_set[oi[0 ]], wall_velocity) / sound_speed**2
+        pdf_9_x_y[oi[1], :, NY-1] = pdf_9_x_y[oi[0], :, NY-1] - \
+                                        2 * velocity_set_weights[oi[0]] * density_x_y[:, NY-1] * np.dot(velocity_set[oi[0 ]], wall_velocity) / sound_speed**2
 
     
     opposite_indexes = [[1, 3], [5, 7], [8, 6]] # indexes of opposite directions
@@ -69,7 +72,7 @@ def animate(i):
 
     # bounce back conditions on the right wall 
     for oi in opposite_indexes:
-        pdf_9_x_y[oi[1], L-1, :] = pdf_9_x_y[oi[0], L-1, :]
+        pdf_9_x_y[oi[1], NX-1, :] = pdf_9_x_y[oi[0], NX-1, :]
     
     # PLOT X VELOCITY
     im.set_array(velocity_x_y_2[:, :, 0])
