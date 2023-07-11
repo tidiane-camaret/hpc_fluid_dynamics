@@ -35,6 +35,7 @@ class LBM:
         self.velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36,
                                               1/36, 1/36, 1/36])
         self.sound_speed = 1 / np.sqrt(3)
+        self.wall_velocity = np.array([0., 0])
         self.pdf_9xy = init_pdf(NX, NY, mode)
         
 
@@ -129,7 +130,7 @@ class LBM:
 
             # MOMENT UPDATE 
             density_xy = calc_density(pdf_9xy)
-            local_avg_velocity_xy2 = calc_local_avg_velocity(pdf_9xy)
+            local_avg_velocity_xy2 = calc_local_avg_velocity(pdf_9xy,density_xy)
 
             # EQULIBRIUM 
             equilibrium_pdf_9xy = calc_equilibrium_pdf(density_xy, local_avg_velocity_xy2)
@@ -139,6 +140,10 @@ class LBM:
 
             # STREAMING STEP
             pdf_9xy = streaming(pdf_9xy)
+
+            # BOUNDARY CONDITIONS
+            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy)
+
 
             if self.parallel:
                 # GATHER AND SAVE RESULTS
@@ -177,10 +182,6 @@ class LBM:
                 # SAVE RESULTS
                 self.densities.append(density_xy)
                 self.velocities.append(local_avg_velocity_xy2)
-
-
-
-        
 
 
     def animate_density(self,i):
@@ -254,8 +255,27 @@ class LBM:
                 plt.savefig("results/ml3_amplitude_"+self.mode+".png")
                 plt.clf()
 
+    def boundary_conditions(self,pdf_9xy,density_xy):
+        if self.mode in ['couette', 'lid']:
+            opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
+            # bounce back conditions on the lower wall
+            for oi in opposite_indexes:
+                pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
 
+            # bounce back conditions on the upper wall (velocity (u,0))
+            for oi in opposite_indexes:
+                pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1] - \
+                                                2 * self.velocity_set_weights[oi[0]] * density_xy[:, -1] * np.dot(self.velocity_set[oi[0]], self.wall_velocity) / self.sound_speed**2
+        if self.mode == 'lid':
+            opposite_indexes = [[4, 7], [8, 6], [3, 1]] # indexes of opposite directions
+            # bounce back conditions on the left wall
+            for oi in opposite_indexes:
+                pdf_9xy[oi[0], 0, :] = pdf_9xy[oi[1], 0, :]
+            # bounce back conditions on the right wall 
+            for oi in opposite_indexes:
+                pdf_9xy[oi[1], -1, :] = pdf_9xy[oi[0], -1, :]
 
+        return pdf_9xy
     
 def Communicate(pdf_9xy,cartcomm,sd):
     recvbuf = np.zeros(pdf_9xy[:,:,1].shape)

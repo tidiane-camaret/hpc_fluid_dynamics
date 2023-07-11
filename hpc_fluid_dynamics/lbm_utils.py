@@ -53,15 +53,20 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
         #rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
         density = rho0 + epsilon * np.sin(2*np.pi*incr_array.T/NX)
         ### local average velocity (u)
-        local_avg_velocity = np.zeros((NX, NY, 2))
-        pdf = calc_equilibrium_pdf(density, local_avg_velocity)
+        velocity = np.zeros((NX, NY, 2))
+        pdf = calc_equilibrium_pdf(density, velocity)
 
     elif mode == "shear_wave_2":
         density = np.ones((NX, NY)) * rho0
         ### local average velocity (u)
-        local_avg_velocity = np.zeros((NX, NY, 2))
-        local_avg_velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
-        pdf = calc_equilibrium_pdf(density, local_avg_velocity)
+        velocity = np.zeros((NX, NY, 2))
+        velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
+        pdf = calc_equilibrium_pdf(density, velocity)
+
+    elif mode in ['couette', 'lid']:
+        density = np.ones((NX, NY)) 
+        velocity = np.zeros((NX, NY, 2))
+        pdf = calc_equilibrium_pdf(density, velocity)
 
     else:
         raise ValueError("Invalid mode")
@@ -96,14 +101,13 @@ def calc_velocity(pdf):
             velocity[i, j, 1] /= calc_density(pdf)[i, j]
     return velocity
 
-def calc_local_avg_velocity(pdf):
+def calc_local_avg_velocity(pdf,density):
     """
     Calculate the local average velocity of the fluid particles. The local
     average velocity is a 3D array of shape (NX, NY, 2), where NX and NY are the
     length and width of the grid, respectively. The third dimension is the
     velocity in the x and y directions.
     """
-    density = calc_density(pdf)
     sum = np.zeros(density.shape + (2,))
     for i in range(len(velocity_set)):
         sum[:, :, 0] += velocity_set[i, 0, None]*pdf[i, :, :]
