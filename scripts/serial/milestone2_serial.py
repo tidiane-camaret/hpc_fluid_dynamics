@@ -43,6 +43,8 @@ for i in range(n_steps):
     # SAVE FOR PLOTTING
     arrays.append(calc_density(pdf))
 
+    print("density: ", density[125, 125])
+
 # PLOT
 # add color channel in order to work with array2gif
 arrays = np.array(arrays)[..., np.newaxis] * np.ones(3)

@@ -19,7 +19,7 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
 pip install --user --upgrade numpy 
 pip install -e .
-time mpirun -np 32 python scripts/parallel/milestone2_parallel.py 
+time mpirun -np 32 python scripts/run_lbm.py 
 #python scripts/serial/milestone2_serial.py 
 
 ## instructions

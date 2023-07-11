@@ -9,6 +9,9 @@ the pdf that would be obtained if the fluid particles were in equilibrium. The
 equilibrium pdf is calculated using the density and the velocity of the fluid
 particles. 
 ============================
+
+to run the script: 
+mpirun -np 4 python scripts/milestone2_parallel.py
 """
 
 import numpy as np
