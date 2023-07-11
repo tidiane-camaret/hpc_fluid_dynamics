@@ -14,23 +14,29 @@ class LBM:
                  NX = 200, 
                  NY = 250, 
                  mode = "circle", 
-                 omega = 1,
-                 parallel = False
+                 omega = 0.1,
+                 parallel = False,
+                 epsilon = 0.05,
             ):
         """
         Initialize the LBM.
         """
+        
         self.NX = NX
         self.NY = NY
         self.mode = mode
+        self.parallel = parallel
+
         self.omega = omega
+        self.epsilon = epsilon
+        self.viscosity = 1/3*(1/omega - 0.5)
         self.velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                                       [1, 1], [-1, 1], [-1, -1], [1, -1]])
         self.velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36,
                                               1/36, 1/36, 1/36])
         self.sound_speed = 1 / np.sqrt(3)
         self.pdf_9xy = init_pdf(NX, NY, mode)
-        self.parallel = parallel
+        
 
         if parallel:
             
@@ -217,6 +223,7 @@ class LBM:
         Plot the velocity.
         """
         if self.parallel==False or self.rank==0:
+
             self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
             self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet')
             self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet')
@@ -228,9 +235,24 @@ class LBM:
             anim.save("results/"+filename, 
                     writer = 'pillow', 
                     fps = 30)
-            
             plt.clf()
 
+            if self.mode == 'shear_wave_2':
+                amplitudes = []
+                for velocity in self.velocities:
+                    v_norm = np.linalg.norm(velocity, axis=2)
+                    amplitudes.append(np.max(v_norm)-np.min(v_norm))
+
+
+            
+                plt.plot(analytic_amplitude(np.arange(self.nt), self.epsilon, self.viscosity, self.NX), label="analytic amplitude")
+                plt.plot(amplitudes, label="measured amplitude")
+                plt.title("Amplitude of the sheer wave over time")
+                plt.xlabel("time")
+                plt.ylabel("amplitude")
+                plt.legend()
+                plt.savefig("results/ml3_amplitude_"+self.mode+".png")
+                plt.clf()
 
 
 
@@ -261,7 +283,8 @@ def Communicate(pdf_9xy,cartcomm,sd):
 #
     return pdf_9xy
 
-
+def analytic_amplitude(t, epsilon, viscosity, NX):
+    return epsilon * np.exp(-viscosity * t*(2*np.pi/NX)**2)
 """    
 def animate_velocity(self,i):
 

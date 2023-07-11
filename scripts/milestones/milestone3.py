@@ -19,6 +19,7 @@ epsilon = 0.05
 n_steps = 1000
 display_anim = True
 
+L, W = 250, 250
 # EX 1 and 2:
 distribution = 2 # exercise 1 or 2
 
@@ -46,7 +47,7 @@ pdf = pdf_collision
 
 fig = plt.figure()
 ax = plt.axes(xlim=(0, W), ylim=(0, L))
-im = ax.imshow(calc_density(pdf), cmap='jet')
+im = ax.imshow(local_avg_velocity[:,:,0], cmap='jet')
 fig.colorbar(im)
 
 
@@ -97,7 +98,7 @@ def animate(i):
 
     pdf = pdf_collision
     # update the image
-    im.set_array(calc_density(pdf))
+    im.set_array(local_avg_velocity[:,:,0])
 
     ax.set_title('t = %d' % i)
 
@@ -107,7 +108,7 @@ def animate(i):
 if display_anim: 
     #plot the animation
     anim = animation.FuncAnimation(fig, animate, frames=n_steps)#, interval=200, blit=True)
-    anim.save("results/ml3_density_anim_"+str(distribution)+".gif", writer = 'pillow', fps = 30)
+    anim.save("results/ml3_velocity_anim_"+str(distribution)+".gif", writer = 'pillow', fps = 30)
 
 else: # only run the simulation
     for i in range(n_steps):
@@ -131,6 +132,5 @@ plt.title("Amplitude of the sheer wave over time")
 plt.xlabel("time")
 plt.ylabel("amplitude")
 plt.legend()
-plt.show()
 
-#plt.savefig("results/ml3_amplitude_"+str(distribution)+".png")
+plt.savefig("results/ml3_amplitude_"+str(distribution)+".png")

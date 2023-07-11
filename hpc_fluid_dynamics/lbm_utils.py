@@ -17,6 +17,9 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
     We need to avoid zones of zero density, otherwise the simulation will
     crash. 
     """
+    rho0 = 0.5
+    epsilon = 0.05
+    incr_array = np.tile(np.arange(NX), (NX, 1)) # array of increasing integers from 0 to L-
 
     pdf = np.ones((len(velocity_set), NX, NY)) / len(velocity_set)
     if mode == "random_uniform":
@@ -40,11 +43,25 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
                     if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                         pdf[i, x, y] += 0.5
 
-    elif mode == "zero channel":
+    elif mode == "zero_channel":
         for x in range(NX):
             for y in range(NY):
                 if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                     pdf[0, x, y] += 0.5
+
+    elif mode == "shear_wave_1":
+        #rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
+        density = rho0 + epsilon * np.sin(2*np.pi*incr_array.T/NX)
+        ### local average velocity (u)
+        local_avg_velocity = np.zeros((NX, NY, 2))
+        pdf = calc_equilibrium_pdf(density, local_avg_velocity)
+
+    elif mode == "shear_wave_2":
+        density = np.ones((NX, NY)) * rho0
+        ### local average velocity (u)
+        local_avg_velocity = np.zeros((NX, NY, 2))
+        local_avg_velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
+        pdf = calc_equilibrium_pdf(density, local_avg_velocity)
 
     else:
         raise ValueError("Invalid mode")
