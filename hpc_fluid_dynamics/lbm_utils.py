@@ -63,10 +63,12 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
         velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
         pdf = calc_equilibrium_pdf(density, velocity)
 
-    elif mode in ['couette', 'lid']:
+    elif mode in ['couette', 'lid', 'poiseuille']:
         density = np.ones((NX, NY)) 
         velocity = np.zeros((NX, NY, 2))
         pdf = calc_equilibrium_pdf(density, velocity)
+
+
 
     else:
         raise ValueError("Invalid mode")
@@ -147,17 +149,3 @@ def streaming(pdf):
         pdf_t1[i] = np.roll(pdf[i], velocity_set[i], axis=(0,1))
     return pdf_t1
 
-
-# visualize the pdf
-def plot_pdf(pdf):
-    plt.figure()
-    plt.imshow(calc_density(pdf))
-    plt.show()
-
-# visualize the velocity
-def plot_velocity(pdf):
-    plt.figure()
-    velocity = calc_velocity(pdf)
-    print(velocity.shape)
-    plt.streamplot(np.arange(pdf.shape[0]), np.arange(pdf.shape[1]), velocity[:, :, 0], velocity[:, :, 1])
-    plt.show()

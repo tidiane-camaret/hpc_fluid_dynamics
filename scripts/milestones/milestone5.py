@@ -20,7 +20,7 @@ d_p = p_out - p_in
 density_in = (p_out + d_p) / sound_speed**2
 density_out = (p_out) / sound_speed**2
 
-n_steps = 5000
+n_steps = 500
 display_anim = True
 
 NX, NY = 250, 250
@@ -43,7 +43,7 @@ def animate(i):
         pdf_9_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
     else:
         density_x_y = calc_density(pdf_9_x_y)
-        velocity_x_y_2 = calc_local_avg_velocity(pdf_9_x_y)
+        velocity_x_y_2 = calc_local_avg_velocity(pdf_9_x_y, density_x_y)
 
     # EQULIBRIUM 
     eq_pdf_9_x_y = calc_equilibrium_pdf(density_x_y, velocity_x_y_2)
