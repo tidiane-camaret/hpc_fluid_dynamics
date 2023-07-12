@@ -14,23 +14,37 @@ class LBM:
                  NX = 200, 
                  NY = 250, 
                  mode = "circle", 
-                 omega = 1,
-                 parallel = False
+                 omega = 0.1,
+                 parallel = False,
+                 epsilon = 0.05,
             ):
         """
         Initialize the LBM.
         """
+        
         self.NX = NX
         self.NY = NY
         self.mode = mode
+        self.parallel = parallel
+
         self.omega = omega
+        self.epsilon = epsilon
+        self.viscosity = 1/3*(1/omega - 0.5)
         self.velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                                       [1, 1], [-1, 1], [-1, -1], [1, -1]])
         self.velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36,
                                               1/36, 1/36, 1/36])
         self.sound_speed = 1 / np.sqrt(3)
+        self.wall_velocity = np.array([0.1, 0])
         self.pdf_9xy = init_pdf(NX, NY, mode)
-        self.parallel = parallel
+        
+        # POISEUILLE
+        p_in = 0.1
+        p_out = 0.01
+        d_p = p_out - p_in
+
+        self.density_in = (p_out + d_p) / sound_speed**2
+        self.density_out = (p_out) / sound_speed**2
 
         if parallel:
             
@@ -123,16 +137,37 @@ class LBM:
 
             # MOMENT UPDATE 
             density_xy = calc_density(pdf_9xy)
-            local_avg_velocity_xy2 = calc_local_avg_velocity(pdf_9xy)
+            local_avg_velocity_xy2 = calc_local_avg_velocity(pdf_9xy,density_xy)
 
             # EQULIBRIUM 
             equilibrium_pdf_9xy = calc_equilibrium_pdf(density_xy, local_avg_velocity_xy2)
 
+            if self.mode == "poiseuille":
+                    density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
+                    density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
+
+                    u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
+                    uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
+
+                    eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
+                    eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
+                    
+                    #print(eq_pdf_u1.shape, pdf_9_x_y[:, -2, :].shape, eq_pdf_9_x_y[:, -2, :].shape)
+                    self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :]) # x N
+                    self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
+
+                    # pressure conditions of left and right walls
+                    pdf_9xy[:,0,:] = self.fill1
+                    pdf_9xy[:,-1,:] = self.fill2
             # COLLISION STEP
             pdf_9xy = pdf_9xy + self.omega*(equilibrium_pdf_9xy - pdf_9xy)
 
             # STREAMING STEP
             pdf_9xy = streaming(pdf_9xy)
+
+            # BOUNDARY CONDITIONS
+            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy)
+
 
             if self.parallel:
                 # GATHER AND SAVE RESULTS
@@ -171,10 +206,6 @@ class LBM:
                 # SAVE RESULTS
                 self.densities.append(density_xy)
                 self.velocities.append(local_avg_velocity_xy2)
-
-
-
-        
 
 
     def animate_density(self,i):
@@ -217,6 +248,7 @@ class LBM:
         Plot the velocity.
         """
         if self.parallel==False or self.rank==0:
+
             self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
             self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet')
             self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet')
@@ -228,12 +260,58 @@ class LBM:
             anim.save("results/"+filename, 
                     writer = 'pillow', 
                     fps = 30)
-            
             plt.clf()
 
+            if self.mode == 'shear_wave_2':
+                amplitudes = []
+                for velocity in self.velocities:
+                    v_norm = np.linalg.norm(velocity, axis=2)
+                    amplitudes.append(np.max(v_norm)-np.min(v_norm))
 
 
+            
+                plt.plot(analytic_amplitude(np.arange(self.nt), self.epsilon, self.viscosity, self.NX), label="analytic amplitude")
+                plt.plot(amplitudes, label="measured amplitude")
+                plt.title("Amplitude of the sheer wave over time")
+                plt.xlabel("time")
+                plt.ylabel("amplitude")
+                plt.legend()
+                plt.savefig("results/amplitude_"+self.mode+".png")
+                plt.clf()
 
+    def boundary_conditions(self,pdf_9xy,density_xy):
+        if self.mode in ['couette', 'lid']:
+            opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
+            # bounce back conditions on the lower wall
+            for oi in opposite_indexes:
+                pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
+
+            # bounce back conditions on the upper wall (velocity (u,0))
+            for oi in opposite_indexes:
+                pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1] - \
+                                                2 * self.velocity_set_weights[oi[0]] * density_xy[:, -1] * np.dot(self.velocity_set[oi[0]], self.wall_velocity) / self.sound_speed**2
+        
+        if self.mode == 'lid':
+            opposite_indexes = [[5, 7], [1, 3], [8, 6]] # indexes of opposite directions
+            # bounce back conditions on the left wall
+            for oi in opposite_indexes:
+                pdf_9xy[oi[0], 0, :] = pdf_9xy[oi[1], 0, :]
+            # bounce back conditions on the right wall 
+            for oi in opposite_indexes:
+                pdf_9xy[oi[1], -1, :] = pdf_9xy[oi[0], -1, :]
+
+        if self.mode == "poiseuille":
+
+            opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
+            # bounce back conditions on the lower wall
+            for oi in opposite_indexes:
+                pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
+
+            # bounce back conditions on the upper wall 
+            for oi in opposite_indexes:
+                pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
+
+        return pdf_9xy
     
 def Communicate(pdf_9xy,cartcomm,sd):
     recvbuf = np.zeros(pdf_9xy[:,:,1].shape)
@@ -261,7 +339,8 @@ def Communicate(pdf_9xy,cartcomm,sd):
 #
     return pdf_9xy
 
-
+def analytic_amplitude(t, epsilon, viscosity, NX):
+    return epsilon * np.exp(-viscosity * t*(2*np.pi/NX)**2)
 """    
 def animate_velocity(self,i):
 

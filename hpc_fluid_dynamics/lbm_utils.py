@@ -17,6 +17,9 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
     We need to avoid zones of zero density, otherwise the simulation will
     crash. 
     """
+    rho0 = 0.5
+    epsilon = 0.05
+    incr_array = np.tile(np.arange(NX), (NX, 1)) # array of increasing integers from 0 to L-
 
     pdf = np.ones((len(velocity_set), NX, NY)) / len(velocity_set)
     if mode == "random_uniform":
@@ -40,11 +43,32 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
                     if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                         pdf[i, x, y] += 0.5
 
-    elif mode == "zero channel":
+    elif mode == "zero_channel":
         for x in range(NX):
             for y in range(NY):
                 if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                     pdf[0, x, y] += 0.5
+
+    elif mode == "shear_wave_1":
+        #rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
+        density = rho0 + epsilon * np.sin(2*np.pi*incr_array.T/NX)
+        ### local average velocity (u)
+        velocity = np.zeros((NX, NY, 2))
+        pdf = calc_equilibrium_pdf(density, velocity)
+
+    elif mode == "shear_wave_2":
+        density = np.ones((NX, NY)) * rho0
+        ### local average velocity (u)
+        velocity = np.zeros((NX, NY, 2))
+        velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
+        pdf = calc_equilibrium_pdf(density, velocity)
+
+    elif mode in ['couette', 'lid', 'poiseuille']:
+        density = np.ones((NX, NY)) 
+        velocity = np.zeros((NX, NY, 2))
+        pdf = calc_equilibrium_pdf(density, velocity)
+
+
 
     else:
         raise ValueError("Invalid mode")
@@ -79,14 +103,13 @@ def calc_velocity(pdf):
             velocity[i, j, 1] /= calc_density(pdf)[i, j]
     return velocity
 
-def calc_local_avg_velocity(pdf):
+def calc_local_avg_velocity(pdf,density):
     """
     Calculate the local average velocity of the fluid particles. The local
     average velocity is a 3D array of shape (NX, NY, 2), where NX and NY are the
     length and width of the grid, respectively. The third dimension is the
     velocity in the x and y directions.
     """
-    density = calc_density(pdf)
     sum = np.zeros(density.shape + (2,))
     for i in range(len(velocity_set)):
         sum[:, :, 0] += velocity_set[i, 0, None]*pdf[i, :, :]
@@ -126,17 +149,3 @@ def streaming(pdf):
         pdf_t1[i] = np.roll(pdf[i], velocity_set[i], axis=(0,1))
     return pdf_t1
 
-
-# visualize the pdf
-def plot_pdf(pdf):
-    plt.figure()
-    plt.imshow(calc_density(pdf))
-    plt.show()
-
-# visualize the velocity
-def plot_velocity(pdf):
-    plt.figure()
-    velocity = calc_velocity(pdf)
-    print(velocity.shape)
-    plt.streamplot(np.arange(pdf.shape[0]), np.arange(pdf.shape[1]), velocity[:, :, 0], velocity[:, :, 1])
-    plt.show()
