@@ -1,6 +1,6 @@
 #!/bin/bash -x
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=40
+#SBATCH --ntasks-per-node=16
 #SBATCH --time=00:40:00
 #SBATCH -J HPC_WITH_PYTHON
 #SBATCH --mem=6gb
@@ -19,12 +19,12 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
 pip install --user --upgrade numpy 
 pip install -e .
-time mpirun -np 32 python scripts/run_lbm.py 
+time mpirun -np 16 python scripts/run_lbm.py 
 #python scripts/serial/milestone2_serial.py 
 
 ## instructions
 # run : 
-# sbatch cluster/lbm.job
+# sbatch scripts/cluster/lbm.job
 
 ## check job :
 # scontrol show job 22411569
