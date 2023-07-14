@@ -1,11 +1,20 @@
 #!/bin/bash -x
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=16
-#SBATCH --time=00:40:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=40
+#SBATCH --partition=dev_single 
+#SBATCH --time=00:10:00
 #SBATCH -J HPC_WITH_PYTHON
 #SBATCH --mem=6gb
 #SBATCH --export=ALL
-#SBATCH --partition=multiple
+
+# All this you may find in https://wiki.bwhpc.de/e/BwUniCluster2.0/Batch_Queues
+# We asked for three nodes with 40 cores and each 90GB of memory. 
+# Thus partition must be multiple. Notice partitions "dev_" are 
+# for development only and thus allow 4 nodes maximum and a walltime
+# of 30 minutes max. output and error are where the script or the system
+# writes messages. The export of all variables allows usage of those,
+# see, e.g., the contents of SLURM_NTASKS
+#
 
 module load devel/python/3.8.6_gnu_10.2 # the newest version (devel/python/3.10.0_gnu_11.1) throws an error when importing numpy
 module load compiler/gnu/12.1
@@ -16,11 +25,15 @@ source activate hpc_env  #using soure instead of conda avoids having to conda in
 
 echo "Running on ${SLURM_JOB_NUM_NODES} nodes with ${SLURM_JOB_CPUS_PER_NODE} cores each."
 echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
-pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
-pip install --user --upgrade numpy 
-pip install -e .
-time mpirun -np 16 python scripts/run_lbm.py 
-#python scripts/serial/milestone2_serial.py 
+# pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
+# pip install --user --upgrade numpy 
+# pip install -e .
+
+## PYTHON SCRIPTS
+# PARALLEL
+#time mpirun -np 16 python scripts/run_lbm.py --parallel --mode couette --NX 256 --NY 256
+# SERIAL
+python scripts/run_lbm.py --mode couette --NX 256 --NY 256
 
 ## instructions
 # run : 

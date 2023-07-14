@@ -17,11 +17,15 @@ if __name__ == "__main__":
                         help='Relaxation parameter')
     parser.add_argument('--mode', type=str, default="shear_wave_2",
                         help='Mode of simulation')
-    parser.add_argument('--parallel', type=bool, default=False,
+    parser.add_argument('--parallel', action='store_true', # default is False
                         help='Parallel simulation')
     args = parser.parse_args()
+
     lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode)
     lbm.run(nt=args.nt)
-    lbm.plot_density(filename="density_"+args.mode+".gif")
-    lbm.plot_velocity(filename="velocity_"+args.mode+".gif")
+
+    p = "_parallel" if args.parallel else "_serial"
+
+    lbm.plot_density(filename="density_"+args.mode+p+".gif")
+    lbm.plot_velocity(filename="velocity_"+args.mode+p+".gif")
 
