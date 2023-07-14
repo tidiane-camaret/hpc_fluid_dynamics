@@ -207,6 +207,17 @@ class LBM:
                 self.densities.append(density_xy)
                 self.velocities.append(local_avg_velocity_xy2)
 
+         # compute the empirical viscosity in the shear wave context
+        if not self.parallel and self.mode == "shear_wave":
+            self.amplitudes = []
+            for velocity in self.velocities:
+                v_norm = np.linalg.norm(velocity, axis=2)
+                self.amplitudes.append(np.max(v_norm)-np.min(v_norm))
+                viscosities = [viscosity_from_amplitude(t, amplitude, self.epsilon, self.NX) for t, amplitude in enumerate(self.amplitudes)]
+                viscosities = viscosities[10:]
+
+            self.measured_viscosity = np.mean(viscosities)
+
 
     def boundary_conditions(self,pdf_9xy,density_xy):
         """
@@ -262,18 +273,29 @@ class LBM:
         Plot the density.
         """
         print("Saving density into an animated graph ...")
-        if self.parallel==False or self.rank==0:
-            self.fig, self.ax = plt.subplots()
-            self.im = self.ax.imshow(self.densities[0], cmap='jet')
-            self.fig.colorbar(self.im)
-            anim = animation.FuncAnimation(self.fig, 
-                                        self.animate_density, 
-                                        frames=self.nt)
-            anim.save("results/"+filename, 
-                    writer = 'pillow', 
-                    fps = 30)
-            
-            plt.clf()
+        
+        self.fig, self.ax = plt.subplots()
+        self.im = self.ax.imshow(self.densities[0], cmap='jet')
+        self.fig.colorbar(self.im)
+        anim = animation.FuncAnimation(self.fig, 
+                                    self.animate_density, 
+                                    frames=self.nt)
+        anim.save("results/"+filename, 
+                writer = 'pillow', 
+                fps = 30)
+        
+        plt.clf()
+
+            ## velocity profile at the middle of the domain, every 100 time steps
+        for i in range(0, self.nt, 100):
+            plt.plot(self.densities[i][self.NX//2,:], label="t = "+str(i))
+            plt.title("density profile at the middle of the domain (x = NX/2)")
+            plt.xlabel("y")
+            plt.ylabel("denstiy")
+            plt.ylim(-0.05,0.05)
+            plt.legend()
+        plt.savefig("results/density_profile_"+self.mode+".png")
+        plt.clf()
 
     def animate_velocity(self,i):
         """
@@ -290,34 +312,36 @@ class LBM:
         Plot the velocity.
         """
         print("Saving velocity into an animated graph ...")
-        if self.parallel==False or self.rank==0:
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
+        self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet')
+        self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet')
+        self.fig.colorbar(self.im1)
+        self.fig.colorbar(self.im2)
+        anim = animation.FuncAnimation(self.fig, 
+                                    self.animate_velocity, 
+                                    frames=self.nt)
+        anim.save("results/"+filename, 
+                writer = 'pillow', 
+                fps = 30)
+        plt.clf()
+        
+        ## velocity profile at the middle of the domain, every 100 time steps
+        for i in range(0, self.nt, 100):
+            plt.plot(self.velocities[i][self.NX//2,:,0], label="t = "+str(i))
+            plt.title("Velocity profile at the middle of the domain (x = NX/2)")
+            plt.xlabel("y")
+            plt.ylabel("x-component of velocity")
 
-            self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
-            self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet')
-            self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet')
-            self.fig.colorbar(self.im1)
-            self.fig.colorbar(self.im2)
-            anim = animation.FuncAnimation(self.fig, 
-                                        self.animate_velocity, 
-                                        frames=self.nt)
-            anim.save("results/"+filename, 
-                    writer = 'pillow', 
-                    fps = 30)
+            plt.legend()
+        plt.savefig("results/velocity_profile_"+self.mode+".png")
+        plt.clf()
+
+        if self.mode == "shear_wave":
+            plt.plot(analytic_amplitude(np.arange(self.nt), self.epsilon, self.viscosity, self.NX), label="analytic amplitude")
+            plt.plot(self.amplitudes, label="measured amplitude")
+            plt.title("Amplitude of the shear wave over time")
+            plt.xlabel("time")
+            plt.ylabel("amplitude")
+            plt.legend()
+            plt.savefig("results/amplitude_"+self.mode+".png")
             plt.clf()
-
-            if self.mode == 'shear_wave':
-                amplitudes = []
-                for velocity in self.velocities:
-                    v_norm = np.linalg.norm(velocity, axis=2)
-                    amplitudes.append(np.max(v_norm)-np.min(v_norm))
-
-
-            
-                plt.plot(analytic_amplitude(np.arange(self.nt), self.epsilon, self.viscosity, self.NX), label="analytic amplitude")
-                plt.plot(amplitudes, label="measured amplitude")
-                plt.title("Amplitude of the shear wave over time")
-                plt.xlabel("time")
-                plt.ylabel("amplitude")
-                plt.legend()
-                plt.savefig("results/amplitude_"+self.mode+".png")
-                plt.clf()

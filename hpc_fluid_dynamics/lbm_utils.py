@@ -181,3 +181,6 @@ def Communicate(pdf_9xy,cartcomm,sd):
 
 def analytic_amplitude(t, epsilon, viscosity, NX):
     return epsilon * np.exp(-viscosity * t*(2*np.pi/NX)**2)
+
+def viscosity_from_amplitude(t, amplitude, epsilon, NX):
+    return - np.log(amplitude/epsilon) / (t*(2*np.pi/NX)**2)

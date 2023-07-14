@@ -1,4 +1,6 @@
 import argparse
+import numpy as np
+import matplotlib.pyplot as plt
 from hpc_fluid_dynamics.lbm_class import LBM
 
 """
@@ -15,17 +17,16 @@ if __name__ == "__main__":
                         help='Number of time steps')
     parser.add_argument('--omega', type=float, default=0.1,
                         help='Relaxation parameter')
-    parser.add_argument('--mode', type=str, default="shear_wave_2",
+    parser.add_argument('--mode', type=str, default="shear_wave",
                         help='Mode of simulation')
     parser.add_argument('--parallel', action='store_true', # default is False
                         help='Parallel simulation')
     args = parser.parse_args()
-
+    
     lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode)
     lbm.run(nt=args.nt)
 
     p = "_parallel" if args.parallel else "_serial"
-
-    lbm.plot_density(filename="density_"+args.mode+p+".gif")
-    lbm.plot_velocity(filename="velocity_"+args.mode+p+".gif")
-
+    if args.parallel==False or lbm.rank==0:
+        #lbm.plot_density(filename="density_"+args.mode+p+".gif")
+        lbm.plot_velocity(filename="velocity_"+args.mode+p+".gif")
