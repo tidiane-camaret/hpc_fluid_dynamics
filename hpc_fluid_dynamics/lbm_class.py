@@ -91,8 +91,8 @@ class LBM:
             self.is_boundary = {
                 'left': self.rcoords[0] == 0,
                 'right': self.rcoords[0] == self.sectsX - 1,
-                'up': self.rcoords[1] == 0,
-                'down': self.rcoords[1] == self.sectsY - 1
+                'top': self.rcoords[1] == 0,
+                'bottom': self.rcoords[1] == self.sectsY - 1
             }
             # where to receive from and where send to 
             sR,dR = self.cartcomm.Shift(1,1)
@@ -370,7 +370,7 @@ class LBM:
             plt.clf()
 
         if self.mode == "lid":
-            for i in range(0, self.nt, 100):
+            for i in [self.nt//2, self.nt]:
             # stream plot of the velocity at the last time step
                 plt.streamplot(np.arange(self.NX), np.arange(self.NY), self.velocities[i][:,:,1], self.velocities[i][:,:,0])
                 plt.title("Velocity stream plot at t = "+str(i))
