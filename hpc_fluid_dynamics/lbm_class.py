@@ -354,12 +354,14 @@ class LBM:
         if self.mode == "lid":
             for i in range(0, self.nt, 100):
             # stream plot of the velocity at the last time step
-                plt.streamplot(np.arange(self.NX), np.arange(self.NY), self.velocities[i][:,:,0], self.velocities[i][:,:,1])
-                plt.title("Stream plot of the velocity at the last time step")
+                plt.streamplot(np.arange(self.NX), np.arange(self.NY), self.velocities[i][:,:,1], self.velocities[i][:,:,0])
+                plt.title("Velocity stream plot at t = "+str(i))
                 plt.xlabel("x")
                 plt.ylabel("y")
-                plt.savefig("results/streamplot_"+self.mode+str(i)+".png")
+                plt.savefig("results/streamplot_"+self.mode+"_"+str(i)+".png")
                 plt.clf()
+
+
 
 
 

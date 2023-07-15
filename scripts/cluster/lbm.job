@@ -1,10 +1,10 @@
 #!/bin/bash -x
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
-#SBATCH --partition=dev_single 
-#SBATCH --time=00:10:00
+#SBATCH --partition=single 
+#SBATCH --time=00:30:00
 #SBATCH -J HPC_WITH_PYTHON
-#SBATCH --mem=6gb
+#SBATCH --mem=16gb
 #SBATCH --export=ALL
 
 # All this you may find in https://wiki.bwhpc.de/e/BwUniCluster2.0/Batch_Queues
@@ -33,8 +33,7 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 # PARALLEL
 #time mpirun -np 16 python scripts/run_lbm.py --parallel --mode couette --NX 256 --NY 256
 # SERIAL
-python scripts/run_lbm.py --mode couette --NX 256 --NY 256
-
+time python3 scripts/run_lbm.py --mode lid --nt 5000 --NX 100 --NY 100 --omega 1.7
 ## instructions
 # run : 
 # sbatch scripts/cluster/lbm.job
