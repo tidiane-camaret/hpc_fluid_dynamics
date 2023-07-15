@@ -23,10 +23,10 @@ if __name__ == "__main__":
                         help='Parallel simulation')
     args = parser.parse_args()
     
-    lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode)
+    lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode, omega=args.omega)
     lbm.run(nt=args.nt)
 
     p = "_parallel" if args.parallel else "_serial"
     if args.parallel==False or lbm.rank==0:
-        #lbm.plot_density(filename="density_"+args.mode+p+".gif")
+        lbm.plot_density(filename="density_"+args.mode+p+".gif")
         lbm.plot_velocity(filename="velocity_"+args.mode+p+".gif")

@@ -20,10 +20,14 @@ d_p = p_out - p_in
 density_in = (p_out + d_p) / sound_speed**2
 density_out = (p_out) / sound_speed**2
 
+print("density_in = ", density_in)
+print("density_out = ", density_out)
+
+
 n_steps = 500
 display_anim = True
 
-NX, NY = 250, 250
+NX, NY = 250, 50
 fig = plt.figure()
 ax = plt.axes()
 im = ax.imshow(np.ones((NX, NY)) , cmap='jet')
@@ -111,7 +115,7 @@ def animate(i):
     ax.set_title('x velocity at t = %d' % i)
 
     if i % 100 == 0:
-        plot_dict[i] = velocity_x_y_2[10, :, 0]
+        plot_dict[i] = velocity_x_y_2[NX//2, :, 0]
    
     return im,
 

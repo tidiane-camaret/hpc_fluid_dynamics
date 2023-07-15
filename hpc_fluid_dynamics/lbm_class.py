@@ -39,12 +39,12 @@ class LBM:
         self.pdf_9xy = init_pdf(NX, NY, mode)
         
         # POISEUILLE
-        p_in = 0.1
-        p_out = 0.01
-        d_p = p_out - p_in
+        self.p_in = 0.1
+        self.p_out = 0.01
+        self.d_p = self.p_out - self.p_in
 
-        self.density_in = (p_out + d_p) / sound_speed**2
-        self.density_out = (p_out) / sound_speed**2
+        self.density_in = (self.p_out + self.d_p) / sound_speed**2
+        self.density_out = (self.p_out) / sound_speed**2
 
         if parallel:
             
@@ -157,8 +157,8 @@ class LBM:
                     self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
 
                     # pressure conditions of left and right walls
-                    pdf_9xy[:,0,:] = self.fill1
-                    pdf_9xy[:,-1,:] = self.fill2
+                    pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
+                    pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
             # COLLISION STEP
             pdf_9xy = pdf_9xy + self.omega*(equilibrium_pdf_9xy - pdf_9xy)
 
@@ -168,7 +168,7 @@ class LBM:
             # BOUNDARY CONDITIONS
             pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy)
 
-
+            
             if self.parallel:
                 # GATHER AND SAVE RESULTS
                 density_1D = np.zeros((self.NX*self.NY)) # 1D array to store density
@@ -207,6 +207,7 @@ class LBM:
                 self.densities.append(density_xy)
                 self.velocities.append(local_avg_velocity_xy2)
 
+        self.pdf_9xy = pdf_9xy
          # compute the empirical viscosity in the shear wave context
         if not self.parallel and self.mode == "shear_wave":
             self.amplitudes = []
@@ -292,7 +293,7 @@ class LBM:
             plt.title("density profile at the middle of the domain (x = NX/2)")
             plt.xlabel("y")
             plt.ylabel("denstiy")
-            plt.ylim(-0.05,0.05)
+            #plt.ylim(-0.05,0.05)
             plt.legend()
         plt.savefig("results/density_profile_"+self.mode+".png")
         plt.clf()
@@ -313,8 +314,8 @@ class LBM:
         """
         print("Saving velocity into an animated graph ...")
         self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
-        self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet')
-        self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet')
+        self.im1 = self.ax1.imshow(self.velocities[0][:,:,0], cmap='jet',)
+        self.im2 = self.ax2.imshow(self.velocities[0][:,:,1], cmap='jet',)
         self.fig.colorbar(self.im1)
         self.fig.colorbar(self.im2)
         anim = animation.FuncAnimation(self.fig, 
@@ -329,10 +330,14 @@ class LBM:
         for i in range(0, self.nt, 100):
             plt.plot(self.velocities[i][self.NX//2,:,0], label="t = "+str(i))
             plt.title("Velocity profile at the middle of the domain (x = NX/2)")
-            plt.xlabel("y")
-            plt.ylabel("x-component of velocity")
-
-            plt.legend()
+            
+        if self.mode == "poiseuille":
+            analytical_solution = [-self.d_p*y*(y - self.NY)/(2*self.viscosity*calc_velocity(self.pdf_9xy).mean(axis=2).sum()) for y in range(self.NY)]
+            plt.plot(analytical_solution, label="analytical velocity")
+            
+        plt.xlabel("y")
+        plt.ylabel("x-component of velocity")
+        plt.legend()
         plt.savefig("results/velocity_profile_"+self.mode+".png")
         plt.clf()
 
@@ -345,3 +350,17 @@ class LBM:
             plt.legend()
             plt.savefig("results/amplitude_"+self.mode+".png")
             plt.clf()
+
+        if self.mode == "lid":
+            for i in range(0, self.nt, 100):
+            # stream plot of the velocity at the last time step
+                plt.streamplot(np.arange(self.NX), np.arange(self.NY), self.velocities[i][:,:,0], self.velocities[i][:,:,1])
+                plt.title("Stream plot of the velocity at the last time step")
+                plt.xlabel("x")
+                plt.ylabel("y")
+                plt.savefig("results/streamplot_"+self.mode+str(i)+".png")
+                plt.clf()
+
+
+
+        

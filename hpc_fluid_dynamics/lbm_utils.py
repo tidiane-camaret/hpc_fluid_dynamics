@@ -22,47 +22,48 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
     incr_array = np.tile(np.arange(NX), (NX, 1)) # array of increasing integers from 0 to L-
 
     pdf = np.ones((len(velocity_set), NX, NY)) / len(velocity_set)
+    
     if mode == "random_uniform":
         for i in range(len(velocity_set)):
             pdf[i] += np.random.uniform(0, 1, (NX, NY))
-
+        pdf /= np.sum(pdf)
     elif mode == "line":
         pdf[:, :, NY//2-20:NY//2+20] += 0.5
-
+        pdf /= np.sum(pdf)
     elif mode == "circle":
         for i in range(len(velocity_set)):
             for x in range(NX):
                 for y in range(NY):
                     if (x - NX//2)**2 + (y - NY//2)**2 < 10**2:
                         pdf[i, x, y] += 0.5
-
+        pdf /= np.sum(pdf)
     elif mode == "square":
         for i in range(len(velocity_set)):
             for x in range(NX):
                 for y in range(NY):
                     if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                         pdf[i, x, y] += 0.5
-
+        pdf /= np.sum(pdf)
     elif mode == "zero_channel":
         for x in range(NX):
             for y in range(NY):
                 if abs(x - NX//2) < 10 and abs(y - NY//2) < 10:
                     pdf[0, x, y] += 0.5
-
+        pdf /= np.sum(pdf)
     elif mode == "shear_wave_1":
         #rho = rho0 + epsilon * sin(2*pi*x/L) where x is the x coordinate of the lattice
         density = rho0 + epsilon * np.sin(2*np.pi*incr_array.T/NX)
         ### local average velocity (u)
         velocity = np.zeros((NX, NY, 2))
         pdf = calc_equilibrium_pdf(density, velocity)
-
+        pdf /= np.sum(pdf)
     elif mode == "shear_wave":
         density = np.ones((NX, NY)) * rho0
         ### local average velocity (u)
         velocity = np.zeros((NX, NY, 2))
         velocity[:,:,0] = epsilon * np.sin(2*np.pi*incr_array/NX)
         pdf = calc_equilibrium_pdf(density, velocity)
-
+        pdf /= np.sum(pdf)
     elif mode in ['couette', 'lid', 'poiseuille']:
         density = np.ones((NX, NY)) 
         velocity = np.zeros((NX, NY, 2))
@@ -72,7 +73,7 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
 
     else:
         raise ValueError("Invalid mode")
-    pdf /= np.sum(pdf)
+    #pdf /= np.sum(pdf)
     return pdf
 
 def calc_density(pdf):
