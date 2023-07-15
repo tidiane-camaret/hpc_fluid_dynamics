@@ -46,6 +46,13 @@ class LBM:
         self.density_in = (self.p_out + self.d_p) / sound_speed**2
         self.density_out = (self.p_out) / sound_speed**2
 
+        self.is_boundary = {
+            "left": True,
+            "right": True,
+            "top": True,
+            "bottom": True,
+        }
+
         if parallel:
             
             self.comm = MPI.COMM_WORLD
@@ -77,11 +84,16 @@ class LBM:
             self.sectsY=sectsY
             self.nxsub = NX//self.sectsX+2
             self.nysub = NY//self.sectsY+2
-            self.boundary_k=[False,False,False,False]
+            # list of booleans for whether the subdomain is a boundary for (left,right,up,down)
 
             self.cartcomm=self.comm.Create_cart(dims=[sectsX,sectsY],periods=[True,True],reorder=False)
             self.rcoords = self.cartcomm.Get_coords(self.rank)
-
+            self.is_boundary = {
+                'left': self.rcoords[0] == 0,
+                'right': self.rcoords[0] == self.sectsX - 1,
+                'up': self.rcoords[1] == 0,
+                'down': self.rcoords[1] == self.sectsY - 1
+            }
             # where to receive from and where send to 
             sR,dR = self.cartcomm.Shift(1,1)
             sL,dL = self.cartcomm.Shift(1,-1)
@@ -227,33 +239,39 @@ class LBM:
         if self.mode in ['couette', 'lid']:
             opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
             # bounce back conditions on the lower wall
-            for oi in opposite_indexes:
-                pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
+            if self.is_boundary["bottom"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
 
             # bounce back conditions on the upper wall (velocity (u,0))
-            for oi in opposite_indexes:
-                pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1] - \
-                                                2 * self.velocity_set_weights[oi[0]] * density_xy[:, -1] * np.dot(self.velocity_set[oi[0]], self.wall_velocity) / self.sound_speed**2
-        
+            if self.is_boundary["top"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1] - \
+                                                    2 * self.velocity_set_weights[oi[0]] * density_xy[:, -1] * np.dot(self.velocity_set[oi[0]], self.wall_velocity) / self.sound_speed**2
+            
         if self.mode == 'lid':
             opposite_indexes = [[5, 7], [1, 3], [8, 6]] # indexes of opposite directions
             # bounce back conditions on the left wall
-            for oi in opposite_indexes:
-                pdf_9xy[oi[0], 0, :] = pdf_9xy[oi[1], 0, :]
+            if self.is_boundary["left"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[0], 0, :] = pdf_9xy[oi[1], 0, :]
             # bounce back conditions on the right wall 
-            for oi in opposite_indexes:
-                pdf_9xy[oi[1], -1, :] = pdf_9xy[oi[0], -1, :]
+            if self.is_boundary["right"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[1], -1, :] = pdf_9xy[oi[0], -1, :]
 
         if self.mode == "poiseuille":
 
             opposite_indexes = [[6, 8], [2, 4], [5, 7]] # indexes of opposite directions
             # bounce back conditions on the lower wall
-            for oi in opposite_indexes:
-                pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
+            if self.is_boundary["bottom"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[0], :, 0] = pdf_9xy[oi[1], :, 0]
 
             # bounce back conditions on the upper wall 
-            for oi in opposite_indexes:
-                pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
+            if self.is_boundary["top"]:
+                for oi in opposite_indexes:
+                    pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
 
         return pdf_9xy
     
