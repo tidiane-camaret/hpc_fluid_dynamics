@@ -259,20 +259,24 @@ class LBM:
                     pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
 
             # pressure conditions of left and right walls
-            if self.is_boundary["left"]:
-                density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
-                u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
-                eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]  
-                self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :])
-                # pressure conditions of left and right walls
-                pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
+            if self.is_boundary["left"] or self.is_boundary["right"]:
+                    density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
+                    density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
 
-            if self.is_boundary["right"]:
-                density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
-                uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
-                eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
-                self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :])
-                pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
+                    u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
+                    uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
+
+                    eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
+                    eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
+                    
+                    self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :]) # x N
+                    self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
+
+                    # pressure conditions of left and right walls
+                    if self.is_boundary["left"]:
+                        pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
+                    if self.is_boundary["right"]:
+                        pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
 
         return pdf_9xy
     
