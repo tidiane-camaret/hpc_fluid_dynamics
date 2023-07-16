@@ -16,25 +16,25 @@ The code implements a Lattice Boltzmann Method (LBM) fluid simulation using MPI 
 
 The code uses the following packages:
 
-    mpi4py
-    numpy
-    matplotlib
+- mpi4py
+- numpy
+- matplotlib
 
 To install the packages, run the following command:
     
-    ```bash 
-    conda create --name hpc_env
-    pip install -r requirements.txt
-    pip install -e .
-    ```
+```bash 
+conda create --name hpc_env
+pip install -r requirements.txt
+pip install -e .
+```
 
 ## Usage
 ### Running the simulation (serial)
 To run the LBM simulation in serial, run the following command:
 
-    ```bash
-    python3 scripts/run_lbm.py --mode lid --NX 300 --NY 300  --nt 1000
-    ```
+```bash
+python3 scripts/run_lbm.py --mode lid --NX 300 --NY 300  --nt 1000
+```
 
 The following arguments are available:
 
@@ -51,13 +51,13 @@ To run the LBM simulation in parallel, add a `--parallel` flag to the above comm
 ### Time benchmarking
 To plot simulation time against number of processes, run the following command:
 
-    ```bash
-    python3 scripts/time_measure.py
-    ```
+```bash
+python3 scripts/time_measure.py
+```
 
 ### Running on the cluster
 To run the simulation on the cluster, run the following command:
 
-    ```bash
-    batch scripts/cluster/lbm.job
-    ```
+```bash
+batch scripts/cluster/lbm.job
+```
