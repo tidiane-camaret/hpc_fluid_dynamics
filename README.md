@@ -52,7 +52,7 @@ To run the LBM simulation in parallel, add a `--parallel` flag to the above comm
 To plot simulation time against number of processes, run the following command:
 
     ```bash
-    time python3 scripts/time_measure.py
+    python3 scripts/time_measure.py
     ```
 
 ### Running on the cluster
