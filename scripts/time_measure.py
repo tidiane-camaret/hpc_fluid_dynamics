@@ -10,7 +10,7 @@ procs_nbs = [1, 4, 9, 16, 25, 36, 64, 100]
 procs_times = []
 for procs_nb in procs_nbs:
     start = time.time()
-    cmd = "mpirun -np {} python scripts/run_lbm.py --NX 600 --NY 600 --parallel --no_plot".format(procs_nb)
+    cmd = "mpirun -np {} python scripts/run_lbm.py --NX 600 --NY 600 --parallel --no_plot --nt 300".format(procs_nb)
     os.system(cmd)
     end = time.time()
     print("Execution time for {} processes: {} seconds".format(procs_nb, end-start))

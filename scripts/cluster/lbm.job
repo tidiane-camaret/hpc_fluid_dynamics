@@ -1,7 +1,7 @@
 #!/bin/bash -x
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=20
-#SBATCH --partition=single 
+#SBATCH --nodes=3
+#SBATCH --ntasks-per-node=40
+#SBATCH --partition=dev_multiple 
 #SBATCH --time=00:10:00
 #SBATCH -J HPC_WITH_PYTHON
 #SBATCH --mem=8gb
@@ -31,9 +31,13 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 
 ## PYTHON SCRIPTS
 # PARALLEL
-time mpirun -np 16 python scripts/run_lbm.py --mode lid --NX 100 --NY 100 --nt 1000 --parallel 
+#time mpirun -np 16 python scripts/run_lbm.py --mode lid --NX 100 --NY 100 --nt 1000 --parallel 
 # SERIAL
-time python3 scripts/run_lbm.py --mode lid --NX 100 --NY 100  --nt 1000
+#time python3 scripts/run_lbm.py --mode lid --NX 100 --NY 100  --nt 1000
+
+# TIME MEASURE
+# SERIAL
+time python3 scripts/time_measure.py
 
 ## instructions
 # run : 
