@@ -21,12 +21,14 @@ if __name__ == "__main__":
                         help='Mode of simulation')
     parser.add_argument('--parallel', action='store_true', # default is False
                         help='Parallel simulation')
+    parser.add_argument('--no_plot', action='store_true', # default is False
+                        help='Do not plot')
     args = parser.parse_args()
     
     lbm = LBM(NX=args.NX, NY=args.NY, parallel=args.parallel, mode = args.mode, omega=args.omega)
     lbm.run(nt=args.nt)
 
     p = "_parallel" if args.parallel else "_serial"
-    if args.parallel==False or lbm.rank==0:
+    if (args.parallel==False or lbm.rank==0) and args.no_plot==False:
         lbm.plot_density(filename="density_"+args.mode+p+".gif")
         lbm.plot_velocity(filename="velocity_"+args.mode+p+".gif")
