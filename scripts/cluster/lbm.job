@@ -25,18 +25,19 @@ source activate hpc_env  #using soure instead of conda avoids having to conda in
 
 echo "Running on ${SLURM_JOB_NUM_NODES} nodes with ${SLURM_JOB_CPUS_PER_NODE} cores each."
 echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
-# pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
+# pip install --user mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
 # pip install --user --upgrade numpy 
 # pip install -e .
 
 ## PYTHON SCRIPTS
+## uncomment the one you want to run
+
 # PARALLEL
 #time mpirun -np 16 python scripts/run_lbm.py --mode lid --NX 100 --NY 100 --nt 1000 --parallel 
 # SERIAL
 #time python3 scripts/run_lbm.py --mode lid --NX 100 --NY 100  --nt 1000
 
-# TIME MEASURE
-# SERIAL
+# PARALLEL - TIME MEASURE
 time python3 scripts/time_measure.py
 
 ## instructions
@@ -44,5 +45,5 @@ time python3 scripts/time_measure.py
 # sbatch scripts/cluster/lbm.job
 
 ## check job :
-# scontrol show job 22411569
+# scontrol show job <job_id>
 
