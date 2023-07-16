@@ -2,50 +2,50 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from mpi4py import MPI
-"""
-A class to represent the Lattice Boltzmann Method (LBM).
-
-"""
 
 from hpc_fluid_dynamics.lbm_utils import *
 
 class LBM:
+    """
+    Main class for the LBM. 
+    """
     def __init__(self, 
-                 NX = 250, 
-                 NY = 250, 
-                 mode = "circle", 
-                 omega = 0.1,
-                 parallel = False,
-                 epsilon = 0.05,
+                 NX = 250, # number of lattice points in the x direction
+                 NY = 250, # number of lattice points in the y direction
+                 mode = "circle", # initial condition mode (see lbm_utils.py)
+                 omega = 0.1, # relaxation parameter
+                 parallel = False, # parallel simulation
+                 epsilon = 0.05, # perturbation amplitude
             ):
-        """
-        Initialize the LBM.
-        """
         
+        """
+        Initialize the parameters of the LBM.
+        """
         self.NX = NX
         self.NY = NY
         self.mode = mode
         self.parallel = parallel
-
         self.omega = omega
         self.epsilon = epsilon
         self.viscosity = 1/3*(1/omega - 0.5)
+
+        # set the constants
         self.velocity_set = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1],
                                       [1, 1], [-1, 1], [-1, -1], [1, -1]])
         self.velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36,
                                               1/36, 1/36, 1/36])
         self.sound_speed = 1 / np.sqrt(3)
         self.wall_velocity = np.array([0.1, 0])
-        self.pdf_9xy = init_pdf(NX, NY, mode)
-        
-        # POISEUILLE
         self.p_in = 0.1
         self.p_out = 0.01
         self.d_p = self.p_out - self.p_in
-
         self.density_in = (self.p_out + self.d_p) / sound_speed**2
         self.density_out = (self.p_out) / sound_speed**2
 
+        # Initialize the PDF
+        self.pdf_9xy = init_pdf(NX, NY, mode)
+        
+        # Flags for boundary conditions on each edge
         self.is_boundary = {
             "left": True,
             "right": True,
@@ -53,8 +53,8 @@ class LBM:
             "bottom": True,
         }
 
+        # Initialize the MPI communicator
         if parallel:
-            
             self.comm = MPI.COMM_WORLD
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
@@ -77,24 +77,21 @@ class LBM:
                 sectsX=int(self.size/sectsY)
                 if self.rank == 0: print('In the case of equal size we divide the processes as {} and {}'.format(sectsX,sectsY))
 
-            #sectsX=int(np.floor(np.sqrt(self.size)))
-            #sectsY=int(self.size//sectsX)
-
             self.sectsX=sectsX
             self.sectsY=sectsY
             self.nxsub = NX//self.sectsX+2
             self.nysub = NY//self.sectsY+2
-            # list of booleans for whether the subdomain is a boundary for (left,right,up,down)
-
             self.cartcomm=self.comm.Create_cart(dims=[sectsX,sectsY],periods=[True,True],reorder=False)
             self.rcoords = self.cartcomm.Get_coords(self.rank)
+
+            # Flags for boundary conditions on each edge
             self.is_boundary = {
                 'left': self.rcoords[0] == 0,
                 'right': self.rcoords[0] == self.sectsY - 1,
                 'top': self.rcoords[1] == self.sectsX - 1,
                 'bottom': self.rcoords[1] == 0,
             }
-            print(self.rank, self.rcoords, self.is_boundary)
+
             # where to receive from and where send to 
             sR,dR = self.cartcomm.Shift(1,1)
             sL,dL = self.cartcomm.Shift(1,-1)
@@ -109,6 +106,7 @@ class LBM:
             self.comm.Gather(self.sd, allDestSourBuf, root = 0)
 
             if self.rank == 0: 
+
                 self.density_plot_list = []
                 print(allrcoords)
                 print(' ')
@@ -136,10 +134,12 @@ class LBM:
         """
         Run the LBM and store the density and velocity at each time step
         """
-        self.velocities = []
-        self.densities = []
         pdf_9xy = self.pdf_9xy
         self.nt = nt
+
+        self.velocities = []
+        self.densities = []
+
         for i in range(self.nt):
             if i % 100 == 0:
                 print("step ", i)
@@ -155,23 +155,6 @@ class LBM:
             # EQULIBRIUM 
             equilibrium_pdf_9xy = calc_equilibrium_pdf(density_xy, local_avg_velocity_xy2)
 
-            if self.mode == "poiseuille":
-                    density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
-                    density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
-
-                    u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
-                    uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
-
-                    eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
-                    eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
-                    
-                    #print(eq_pdf_u1.shape, pdf_9_x_y[:, -2, :].shape, eq_pdf_9_x_y[:, -2, :].shape)
-                    self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :]) # x N
-                    self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
-
-                    # pressure conditions of left and right walls
-                    pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
-                    pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
             # COLLISION STEP
             pdf_9xy = pdf_9xy + self.omega*(equilibrium_pdf_9xy - pdf_9xy)
 
@@ -179,7 +162,7 @@ class LBM:
             pdf_9xy = streaming(pdf_9xy)
 
             # BOUNDARY CONDITIONS
-            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy)
+            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy, local_avg_velocity_xy2, equilibrium_pdf_9xy)
 
             
             if self.parallel:
@@ -221,6 +204,7 @@ class LBM:
                 self.velocities.append(local_avg_velocity_xy2)
 
         self.pdf_9xy = pdf_9xy
+
          # compute the empirical viscosity in the shear wave context
         if not self.parallel and self.mode == "shear_wave":
             self.amplitudes = []
@@ -233,7 +217,7 @@ class LBM:
             self.measured_viscosity = np.mean(viscosities)
 
 
-    def boundary_conditions(self,pdf_9xy,density_xy):
+    def boundary_conditions(self,pdf_9xy,density_xy, local_avg_velocity_xy2, equilibrium_pdf_9xy):
         """
         Boundary conditions in the couette, poiseuille and sliding lid contexts
         """
@@ -273,6 +257,22 @@ class LBM:
             if self.is_boundary["top"]:
                 for oi in opposite_indexes:
                     pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
+
+            # pressure conditions of left and right walls
+            if self.is_boundary["left"]:
+                density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
+                u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
+                eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]  
+                self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :])
+                # pressure conditions of left and right walls
+                pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
+
+            if self.is_boundary["right"]:
+                density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
+                uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
+                eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
+                self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :])
+                pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
 
         return pdf_9xy
     
