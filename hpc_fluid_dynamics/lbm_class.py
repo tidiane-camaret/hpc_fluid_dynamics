@@ -90,10 +90,11 @@ class LBM:
             self.rcoords = self.cartcomm.Get_coords(self.rank)
             self.is_boundary = {
                 'left': self.rcoords[0] == 0,
-                'right': self.rcoords[0] == self.sectsX - 1,
-                'top': self.rcoords[1] == 0,
-                'bottom': self.rcoords[1] == self.sectsY - 1
+                'right': self.rcoords[0] == self.sectsY - 1,
+                'top': self.rcoords[1] == self.sectsX - 1,
+                'bottom': self.rcoords[1] == 0,
             }
+            print(self.rank, self.rcoords, self.is_boundary)
             # where to receive from and where send to 
             sR,dR = self.cartcomm.Shift(1,1)
             sL,dL = self.cartcomm.Shift(1,-1)
@@ -145,7 +146,7 @@ class LBM:
 
             # COMMUNICATE
             if self.parallel:
-                pdf_9xy = Communicate(pdf_9xy,self.cartcomm,self.sd)
+                pdf_9xy = Communicate(pdf_9xy,self.cartcomm,self.sd,self.is_boundary)
 
             # MOMENT UPDATE 
             density_xy = calc_density(pdf_9xy)
@@ -350,7 +351,7 @@ class LBM:
             plt.title("Velocity profile at the middle of the domain (x = NX/2)")
             
         if self.mode == "poiseuille":
-            analytical_solution = [-self.d_p*y*(y - self.NY)/(2*self.viscosity*calc_velocity(self.pdf_9xy).mean(axis=2).sum()) for y in range(self.NY)]
+            analytical_solution = [self.d_p*y*(y - self.NY)/(2*self.viscosity*calc_velocity(self.pdf_9xy).mean(axis=2).sum()) for y in range(self.NY)]
             plt.plot(analytical_solution, label="analytical velocity")
             
         plt.xlabel("y")
@@ -370,7 +371,7 @@ class LBM:
             plt.clf()
 
         if self.mode == "lid":
-            for i in [self.nt//2, self.nt]:
+            for i in [self.nt//2, self.nt-1]:
             # stream plot of the velocity at the last time step
                 plt.streamplot(np.arange(self.NX), np.arange(self.NY), self.velocities[i][:,:,1], self.velocities[i][:,:,0])
                 plt.title("Velocity stream plot at t = "+str(i))

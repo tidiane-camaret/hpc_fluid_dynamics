@@ -151,29 +151,33 @@ def streaming(pdf):
     return pdf_t1
 
 
-def Communicate(pdf_9xy,cartcomm,sd):
+def Communicate(pdf_9xy,cartcomm,sd,is_boundary):
     recvbuf = np.zeros(pdf_9xy[:,:,1].shape)
     sR,dR,sL,dL,sU,dU,sD,dD = sd
     # Send to right which is destination rigth (dR) and receive from left which is source right (sR)
     # print(rank,'Right, source',sR,'destination',dR)
     sendbuf = pdf_9xy[:,:,-2].copy() # Send the second last column to dR
     cartcomm.Sendrecv(sendbuf, dR, recvbuf = recvbuf, source = sR)
-    pdf_9xy[:,:,0] = recvbuf # received into the 0th column from sR
+    if not is_boundary["bottom"]:
+        pdf_9xy[:,:,0] = recvbuf # received into the 0th column from sR
     # Send to left and receive from right
     #print(rank,'Left, source',sL,'destination',dL)
     sendbuf = pdf_9xy[:,:,1].copy()
     cartcomm.Sendrecv(sendbuf, dL, recvbuf = recvbuf, source = sL)
-    pdf_9xy[:,:,-1] = recvbuf
+    if not is_boundary["top"]:
+        pdf_9xy[:,:,-1] = recvbuf
     # Send to up and receive from down
     #print(rank,'Up, source',sU,'destination',dU)
     sendbuf = pdf_9xy[:,1,:].copy()
     cartcomm.Sendrecv(sendbuf, dU, recvbuf = recvbuf, source = sU)
-    pdf_9xy[:,-1,:] = recvbuf
+    if not is_boundary["right"]:
+        pdf_9xy[:,-1,:] = recvbuf
     # Send to down and receive from up
     #print(rank,'Down, source',sD,'destination',dD)
     sendbuf = pdf_9xy[:,-2,:].copy()
     cartcomm.Sendrecv(sendbuf, dD, recvbuf = recvbuf, source = sD)
-    pdf_9xy[:,0,:]=recvbuf
+    if not is_boundary["left"]:
+        pdf_9xy[:,0,:]=recvbuf
 #
     return pdf_9xy
 
