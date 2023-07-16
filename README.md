@@ -6,10 +6,10 @@ This repository contains a fluid dynamics simulation project implemented using h
 
 The code implements a Lattice Boltzmann Method (LBM) fluid simulation using MPI for parallelization. Key aspects include:
 
-    LBM implementation for fluid flow modeling
-    Parallel processing using MPI domain decomposition
-    Simulation of different test cases like lid-driven cavity, Poiseuille flow
-    Visualization of simulation results
+-   LBM implementation for fluid flow modeling
+-   Parallel processing using MPI domain decomposition
+-   Simulation of different test cases like lid-driven cavity, Poiseuille flow
+-   Visualization of simulation results
 
 
 ## Installation
