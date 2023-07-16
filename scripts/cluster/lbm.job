@@ -1,7 +1,7 @@
 #!/bin/bash -x
-#SBATCH --nodes=3
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
-#SBATCH --partition=dev_multiple 
+#SBATCH --partition=dev_single
 #SBATCH --time=00:10:00
 #SBATCH -J HPC_WITH_PYTHON
 #SBATCH --mem=8gb
@@ -28,16 +28,14 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 # pip install --user array2gif ipyparallel mpi4py matplotlib # The --user option tells pip to install into the .local folder in home directory
 # pip install --user --upgrade numpy 
 # pip install -e .
-
+conda list -e > requirements.txt
 ## PYTHON SCRIPTS
+# SERIAL
+time python3 scripts/run_lbm.py --mode couette --NX 300 --NY 300  --nt 1000
 # PARALLEL
-#time mpirun -np 16 python scripts/run_lbm.py --mode lid --NX 100 --NY 100 --nt 1000 --parallel 
-# SERIAL
-#time python3 scripts/run_lbm.py --mode lid --NX 100 --NY 100  --nt 1000
-
-# TIME MEASURE
-# SERIAL
-time python3 scripts/time_measure.py
+#time mpirun -np 16 python scripts/run_lbm.py --mode shear_wave --NX 300 --NY 300 --nt 1000 --parallel 
+# PARALLEL - TIME MEASURE
+#time python3 scripts/time_measure.py
 
 ## instructions
 # run : 
