@@ -156,7 +156,7 @@ class LBM:
             equilibrium_pdf_9xy = calc_equilibrium_pdf(density_xy, local_avg_velocity_xy2)
             
             # pressure conditions of left and right walls
-            if self.is_boundary["left"] or self.is_boundary["right"]:
+            if self.mode == "poiseuille" and (self.is_boundary["left"] or self.is_boundary["right"]):
                     density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
                     density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
 
