@@ -35,7 +35,7 @@ echo "Each node has ${SLURM_MEM_PER_NODE} of memory allocated to this job."
 # PARALLEL
 #time mpirun -np 16 python scripts/run_lbm.py --mode poiseuille --NX 100 --NY 100 --nt 1000 --parallel 
 # SERIAL
-time python3 scripts/run_lbm.py --mode poiseuille --NX 500 --NY 100  --nt 1000
+time python3 scripts/run_lbm.py --mode poiseuille --NX 500 --NY 100  --nt 1000 
 
 # PARALLEL - TIME MEASURE
 # time python3 scripts/time_measure.py

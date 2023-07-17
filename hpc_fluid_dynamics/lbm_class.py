@@ -43,7 +43,7 @@ class LBM:
         self.density_out = (self.p_out) / sound_speed**2
 
         # Initialize the PDF
-        self.pdf_9xy = init_pdf(NX, NY, mode)
+        self.pdf_9xy = init_pdf(NX, NY, mode, self.epsilon)
         
         # Flags for boundary conditions on each edge
         self.is_boundary = {
@@ -154,7 +154,27 @@ class LBM:
 
             # EQULIBRIUM 
             equilibrium_pdf_9xy = calc_equilibrium_pdf(density_xy, local_avg_velocity_xy2)
+            
+            # pressure conditions of left and right walls
+            if self.is_boundary["left"] or self.is_boundary["right"]:
+                    density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
+                    density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
 
+                    u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
+                    uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
+
+                    eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
+                    eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
+                    
+                    self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :]) # x N
+                    self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
+
+                    # pressure conditions of left and right walls
+                    if self.is_boundary["left"]:
+                        pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
+                    if self.is_boundary["right"]:
+                        pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
+                        
             # COLLISION STEP
             pdf_9xy = pdf_9xy + self.omega*(equilibrium_pdf_9xy - pdf_9xy)
 
@@ -162,7 +182,7 @@ class LBM:
             pdf_9xy = streaming(pdf_9xy)
 
             # BOUNDARY CONDITIONS
-            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy, local_avg_velocity_xy2, equilibrium_pdf_9xy)
+            pdf_9xy = self.boundary_conditions(pdf_9xy, density_xy)
 
             
             if self.parallel:
@@ -179,7 +199,7 @@ class LBM:
                     xy = np.array([rcoords_x,rcoords_y]).T
                     density_xy_gathered = np.zeros((self.NX,self.NY))
                     velocity_xy_gathered = np.zeros((self.NX,self.NY,2))
-                    #
+
                     for i in np.arange(self.sectsX):
                         for j in np.arange(self.sectsY):
                             k = i*self.sectsX+j
@@ -192,8 +212,7 @@ class LBM:
 
                             density_xy_gathered[xlo:xhi,ylo:yhi] = density_1D[clo:chi].reshape(self.NX//self.sectsX,self.NY//self.sectsY)
                             velocity_xy_gathered[xlo:xhi,ylo:yhi,:] = velocity_1D[clo:chi,:].reshape(self.NX//self.sectsX,self.NY//self.sectsY,2)
-                    #print the middle of the grid
-                    #print(density_plot[self.NX//2,self.NY//2])
+
                     self.densities.append(density_xy_gathered)
                     self.velocities.append(velocity_xy_gathered)
 
@@ -217,7 +236,7 @@ class LBM:
             self.measured_viscosity = np.mean(viscosities)
 
 
-    def boundary_conditions(self,pdf_9xy,density_xy, local_avg_velocity_xy2, equilibrium_pdf_9xy):
+    def boundary_conditions(self,pdf_9xy,density_xy):
         """
         Boundary conditions in the couette, poiseuille and sliding lid contexts
         """
@@ -258,25 +277,7 @@ class LBM:
                 for oi in opposite_indexes:
                     pdf_9xy[oi[1], :, -1] = pdf_9xy[oi[0], :, -1]
 
-            # pressure conditions of left and right walls
-            if self.is_boundary["left"] or self.is_boundary["right"]:
-                    density_in_x_y = np.ones((self.NX, self.NY))*self.density_in
-                    density_out_x_y = np.ones((self.NX, self.NY))*self.density_out
 
-                    u1_x_y_2 = np.repeat(local_avg_velocity_xy2[1,:,:][None, :], self.NX, axis=0)
-                    uN_x_y_2 = np.repeat(local_avg_velocity_xy2[-2,:,:][None, :], self.NX, axis=0)
-
-                    eq_pdf_u1 = calc_equilibrium_pdf(density_out_x_y, u1_x_y_2)[:, 1, :]
-                    eq_pdf_uN = calc_equilibrium_pdf(density_in_x_y, uN_x_y_2)[:, -2, :]
-                    
-                    self.fill1 = eq_pdf_uN + (pdf_9xy[:, -2, :] - equilibrium_pdf_9xy[:, -2, :]) # x N
-                    self.fill2 = eq_pdf_u1 + (pdf_9xy[:, 1, :] - equilibrium_pdf_9xy[:, 1, :]) # x 1
-
-                    # pressure conditions of left and right walls
-                    if self.is_boundary["left"]:
-                        pdf_9xy[[1, 5, 8],0,:] = self.fill1[[1, 5, 8]]
-                    if self.is_boundary["right"]:
-                        pdf_9xy[[1, 5, 8],-1,:] = self.fill2[[1, 5, 8]]
 
         return pdf_9xy
     
@@ -350,7 +351,7 @@ class LBM:
         plt.clf()
         
         ## velocity profile at the middle of the domain, every 100 time steps
-        for i in range(0, self.nt, 100):
+        for i in [self.nt//2, self.nt-1]:
             plt.plot(self.velocities[i][self.NX//2,:,0], label="t = "+str(i))
             plt.title("Velocity profile at the middle of the domain (x = NX/2)")
             

@@ -9,7 +9,7 @@ velocity_set_weights = np.array([4/9, 1/9, 1/9, 1/9, 1/9, 1/36, 1/36,
 
 sound_speed = 1 / np.sqrt(3)
 
-def init_pdf(NX = 250, NY = 250, mode = "random_uniform"): 
+def init_pdf(NX = 250, NY = 250, mode = "random_uniform",epsilon = 0.05): 
     """
     Initialize the probability distribution function (pdf) of the fluid
     particles. The pdf is a 3D array of shape (len(velocity_set), NX, NY), where
@@ -18,7 +18,6 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
     crash. 
     """
     rho0 = 0.5
-    epsilon = 0.05
     incr_array = np.tile(np.arange(NX), (NX, 1)) # array of increasing integers from 0 to L-
 
     pdf = np.ones((len(velocity_set), NX, NY)) / len(velocity_set)
@@ -73,7 +72,7 @@ def init_pdf(NX = 250, NY = 250, mode = "random_uniform"):
 
     else:
         raise ValueError("Invalid mode")
-    #pdf /= np.sum(pdf)
+
     return pdf
 
 def calc_density(pdf):
